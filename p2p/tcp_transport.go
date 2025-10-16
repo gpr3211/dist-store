@@ -52,8 +52,6 @@ func (t *TCPTransport) startAcceptLoop() {
 	}
 }
 
-type Temp struct{}
-
 func (t *TCPTransport) handleConn(conn net.Conn) {
 	peer := NewTCPPeer(conn, true)
 
@@ -65,20 +63,17 @@ func (t *TCPTransport) handleConn(conn net.Conn) {
 		return
 
 	}
-	//msg := &Message{}
+	msg := &Message{}
+	// READLOOP
 
-	buf := make([]byte, 2048)
 	for {
-		n, err := conn.Read(buf)
-		if err != nil {
+		if err := t.Config.Decoder.Decode(conn, msg); err != nil {
 			fmt.Printf("TCP ERR: %s\n", err)
+			continue
 		}
-		fmt.Printf("message: %+v\n", string(buf[:n]))
-		//	if err := t.Config.Decoder.Decode(conn, msg); err != nil {
-		//		fmt.Printf("TCP ERR: %s\n", err)
-		//		continue
-		//	}
 
+		msg.From = conn.RemoteAddr()
+		fmt.Printf("%s: message: %+v\n", msg.From, msg.Payload)
 	}
 }
 
