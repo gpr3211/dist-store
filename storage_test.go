@@ -11,6 +11,10 @@ func TestPathTransform(t *testing.T) {
 	key := "best-pics"
 	pathname := CASPathTransform(key)
 	fmt.Println(pathname)
+	expectedPath := "ad1e7/d6c18/15d8e/3f9bf/a634c/12d6a/3f31f/9894e"
+	if pathname != expectedPath {
+		t.Error("bad test but ok")
+	}
 }
 
 func TestStorage(t *testing.T) {

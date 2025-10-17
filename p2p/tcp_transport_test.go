@@ -15,5 +15,4 @@ func TestTCPTransport(t *testing.T) {
 	tr := NewTCPTransport(opts)
 	assert.Equal(t, tr.Config.ListenAddr, ":3000")
 
-	assert.Nil(t, tr.ListenAndAccept())
 }

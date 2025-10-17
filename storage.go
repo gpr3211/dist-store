@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"crypto/md5"
 	"crypto/sha1"
 	"encoding/hex"
 	"io"
@@ -12,10 +14,9 @@ import (
 func CASPathTransform(key string) string {
 
 	hash := sha1.Sum([]byte(key))
-
 	hashString := hex.EncodeToString(hash[:]) // [:] converts [20]byte array to a slice.
 
-	blocksize := 5
+	blocksize := len(hashString) / 2
 	sliceLen := len(hashString) / blocksize
 	paths := make([]string, sliceLen)
 	for i := range paths {
@@ -45,16 +46,30 @@ func NewStore(opts StoreOpts) *Store {
 	}
 }
 
+type PathKey struct {
+	PathName string
+	Original string
+}
+
+func (s *Store) readStream(key string) {
+
+}
+
 func (s *Store) writeStream(key string, r io.Reader) error {
 
-	pathname := s.PathTransformFunc(key)
+	pathname := s.PathTransformFunc(key) //change dir structure here
 	if err := os.MkdirAll(pathname, os.ModePerm); err != nil {
 		return err
 
 	}
-	filename := "someFile"
-	pathandFilename := pathname + "/" + filename
+	buf := new(bytes.Buffer)
 
+	io.Copy(buf, r)
+
+	filenameBytes := md5.Sum(buf.Bytes())
+	filename := hex.EncodeToString(filenameBytes[:])
+
+	pathandFilename := pathname + "/" + filename
 	f, err := os.OpenFile(pathandFilename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		panic(err)
@@ -66,5 +81,6 @@ func (s *Store) writeStream(key string, r io.Reader) error {
 		return err
 	}
 	log.Printf("Written (%d) bytes to disk", n)
+
 	return nil
 }

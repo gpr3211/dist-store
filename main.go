@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Transport p2p.Transport
 	logger    *slog.Logger
+	secret    []byte
 }
 
 func OnPeer(p2p.Peer) error {
