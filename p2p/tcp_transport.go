@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"sync"
 )
@@ -11,13 +10,7 @@ type TCPTransportOpts struct {
 	HandshakeFunc HandshakeFunc
 	ListenAddr    string
 	Decoder       Decoder
-}
-
-type TCPTransport struct {
-	Config   TCPTransportOpts
-	listener net.Listener
-	peers    map[net.Addr]Peer
-	mu       *sync.RWMutex
+	OnPeer        func(Peer) error
 }
 
 // TCPPeer represent remote node over a tcp connection.
@@ -26,18 +19,37 @@ type TCPPeer struct {
 	conn     net.Conn
 }
 
-func NewTCPPeer(con net.Conn, out bool) *TCPPeer {
+func (t TCPPeer) Close() error {
+	return t.conn.Close()
+}
 
+func NewTCPPeer(con net.Conn, out bool) *TCPPeer {
 	return &TCPPeer{
 		conn:     con,
 		outbound: out,
 	}
 }
 
-func NewTCPTransport(opts TCPTransportOpts) *TCPTransport {
+type TCPTransport struct {
+	Config   TCPTransportOpts
+	listener net.Listener
+	peers    map[net.Addr]Peer
+	rpcChan  chan RPC
+	mu       *sync.RWMutex
+}
 
+func (t *TCPTransport) Consume() <-chan RPC {
+	return t.rpcChan
+}
+func (t *TCPTransport) Close() error {
+	return t.listener.Close()
+}
+
+func NewTCPTransport(opts TCPTransportOpts) *TCPTransport {
 	return &TCPTransport{
-		Config: opts,
+		Config:  opts,
+		rpcChan: make(chan RPC, 5),
+		peers:   make(map[net.Addr]Peer),
 	}
 }
 
@@ -56,24 +68,41 @@ func (t *TCPTransport) handleConn(conn net.Conn) {
 	peer := NewTCPPeer(conn, true)
 
 	fmt.Printf("New incoming conn %+v\n", peer.conn)
+	var err error
+	defer func() {
+		fmt.Printf("dropping peer connection: %s", err)
+		conn.Close()
+
+	}()
+
 	// HANDLE !! TODO:
 	if err := t.Config.HandshakeFunc(conn); err != nil {
-		conn.Close()
-		log.Println(ErrInvalidHandshake)
 		return
 
 	}
-	msg := &Message{}
+	if t.Config.OnPeer != nil {
+		if err = t.Config.OnPeer(peer); err != nil {
+			return
+
+		}
+	}
+	msg := RPC{}
+
 	// READLOOP
 
 	for {
-		if err := t.Config.Decoder.Decode(conn, msg); err != nil {
+		err := t.Config.Decoder.Decode(conn, &msg)
+		if err == net.ErrClosed {
+			return
+		}
+		if err != nil {
 			fmt.Printf("TCP ERR: %s\n", err)
 			continue
 		}
 
 		msg.From = conn.RemoteAddr()
-		fmt.Printf("%s: message: %+v\n", msg.From, msg.Payload)
+		fmt.Printf("%s: message: %+v\n", msg.From, string(msg.Payload))
+		t.rpcChan <- msg
 	}
 }
 

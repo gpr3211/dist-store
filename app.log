@@ -1,0 +1,14 @@
+{"time":"2025-10-16T22:41:54.558685936-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":46},"msg":"Application started"}
+{"time":"2025-10-16T22:45:04.38993821-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":46},"msg":"Application started"}
+{"time":"2025-10-16T22:46:13.736870293-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":46},"msg":"Application started"}
+{"time":"2025-10-16T22:58:32.063300741-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":46},"msg":"Application started"}
+{"time":"2025-10-16T23:01:45.52888258-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":46},"msg":"Application started"}
+{"time":"2025-10-16T23:03:56.414375844-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":46},"msg":"Application started"}
+{"time":"2025-10-16T23:04:45.330470535-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":46},"msg":"Application started"}
+{"time":"2025-10-16T23:06:35.762193174-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":46},"msg":"Application started"}
+{"time":"2025-10-16T23:19:20.288651268-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":46},"msg":"Application started"}
+{"time":"2025-10-16T23:19:52.655940959-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":46},"msg":"Application started"}
+{"time":"2025-10-16T23:21:34.715892005-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":46},"msg":"Application started"}
+{"time":"2025-10-16T23:30:36.790581523-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":47},"msg":"Application started"}
+{"time":"2025-10-16T23:31:42.665024894-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":47},"msg":"Application started"}
+{"time":"2025-10-16T23:36:01.931325356-04:00","level":"INFO","source":{"function":"main.main","file":"/home/pavlin/study/latest/dist-store/main.go","line":52},"msg":"Application started"}
