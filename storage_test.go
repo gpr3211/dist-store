@@ -48,17 +48,20 @@ func TestStorage(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	r, err := s.Read(key)
 
+	r, err := s.Read(key)
 	if err != nil {
 		t.Error(err)
 	}
+
 	b, _ := io.ReadAll(r)
+
 	if string(b) != string(data) {
 		t.Errorf("want [%s] have [%s]", data, b)
 	}
 
 	err = s.Delete(key)
+
 	if err != nil {
 		t.Errorf("failed to delete")
 	}

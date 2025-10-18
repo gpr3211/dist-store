@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 
 	"crypto/sha1"
 	"encoding/hex"
@@ -19,6 +20,14 @@ type PathKey struct {
 
 func (p PathKey) Fullpath() string {
 	return fmt.Sprintf("%s/%s", p.PathName, p.Filename)
+}
+
+func (p PathKey) FirstPath() string {
+	paths := strings.Split(p.PathName, "/")[0]
+	if len(paths) == 0 {
+		return ""
+	}
+	return paths
 }
 
 // CASPathTransform
@@ -45,7 +54,13 @@ func CASPathTransform(key string) PathKey {
 
 type PathTransformFunc func(string) PathKey
 
-var DefaultPathTransformFunc = func(key string) PathKey { return CASPathTransform(key) }
+var DefaultPathTransformFunc = func(key string) PathKey {
+
+	return PathKey{
+		PathName: key,
+		Filename: key,
+	}
+}
 
 type Store struct {
 	StoreOpts
@@ -53,12 +68,19 @@ type Store struct {
 
 func (s *Store) Delete(key string) error {
 	pkey := s.PathTransformFunc(key)
-	if err := os.RemoveAll(pkey.Fullpath()); err != nil {
-		fmt.Printf("Failed to remove key %s from %s", key, pkey.Fullpath())
-		return err
-	}
-	return os.RemoveAll(pkey.PathName)
+	return os.RemoveAll(s.Root + "/" + pkey.FirstPath())
 
+}
+
+// Has checks if the store contains a key.
+// - returns true if found.
+func (s *Store) Has(key string) bool {
+	pk := s.PathTransformFunc(key)
+	_, err := os.Stat(pk.Fullpath())
+	if errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	return true
 }
 
 func (s *Store) Read(key string) (io.Reader, error) {
@@ -73,12 +95,23 @@ func (s *Store) Read(key string) (io.Reader, error) {
 
 }
 
+const defaultRootFolder = "ggdata"
+
 type StoreOpts struct {
+	Root              string // Root is the root data dir.
 	PathTransformFunc PathTransformFunc
 }
 
 func NewStore(opts StoreOpts) *Store {
 
+	// set default.
+	if opts.PathTransformFunc == nil {
+		opts.PathTransformFunc = DefaultPathTransformFunc
+	}
+
+	if len(opts.Root) == 0 {
+		opts.Root = defaultRootFolder
+	}
 	return &Store{
 		StoreOpts: opts,
 	}
@@ -88,7 +121,7 @@ func (s *Store) readStream(key string) (io.Reader, error) {
 
 	pKey := s.PathTransformFunc(key)
 	fullPath := pKey.Fullpath()
-	f, err := os.Open(fullPath)
+	f, err := os.Open(s.Root + "/" + fullPath)
 	if err != nil {
 		return nil, err
 	}
@@ -99,14 +132,14 @@ func (s *Store) readStream(key string) (io.Reader, error) {
 func (s *Store) writeStream(key string, r io.Reader) error {
 
 	pathkey := s.PathTransformFunc(key) //change dir structure here
-	if err := os.MkdirAll(pathkey.PathName, os.ModePerm); err != nil {
+	if err := os.MkdirAll(s.Root+"/"+pathkey.PathName, os.ModePerm); err != nil {
 		return err
 
 	}
 
 	pathandFilename := pathkey.Fullpath()
 	// f, err := os.OpenFile(pathandFilename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	f, err := os.OpenFile(pathandFilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	f, err := os.OpenFile(s.Root+"/"+pathandFilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
 		panic(err)
 	}
