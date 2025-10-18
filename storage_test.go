@@ -59,6 +59,10 @@ func TestStorage(t *testing.T) {
 	if string(b) != string(data) {
 		t.Errorf("want [%s] have [%s]", data, b)
 	}
+	t.Attr("Storage", "test Has func")
+	if ok := s.Has(key); !ok {
+		t.Errorf("expected to have key")
+	}
 
 	err = s.Delete(key)
 

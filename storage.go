@@ -76,7 +76,10 @@ func (s *Store) Delete(key string) error {
 // - returns true if found.
 func (s *Store) Has(key string) bool {
 	pk := s.PathTransformFunc(key)
-	_, err := os.Stat(pk.Fullpath())
+
+	rootPath := s.Root + "/" + pk.Fullpath()
+	_, err := os.Stat(rootPath)
+
 	if errors.Is(err, os.ErrNotExist) {
 		return false
 	}
