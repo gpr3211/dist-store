@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"testing"
 )
 
@@ -12,19 +13,53 @@ func TestPathTransform(t *testing.T) {
 	pathname := CASPathTransform(key)
 	fmt.Println(pathname)
 	expectedPath := "ad1e7/d6c18/15d8e/3f9bf/a634c/12d6a/3f31f/9894e"
-	if pathname != expectedPath {
-		t.Error("bad test but ok")
+	expectedO := "ad1e7d6c1815d8e3f9bfa634c12d6a3f31f9894e"
+	if pathname.PathName != expectedPath {
+		t.Error("pathname not expected")
 	}
+	if pathname.Filename != expectedO {
+		t.Errorf("Filename: got [%s] expected [%s]", pathname.Filename, expectedO)
+	}
+}
+
+func TestStoreDelete(t *testing.T) {
+	opts := StoreOpts{
+		PathTransformFunc: CASPathTransform,
+	}
+	s := NewStore(opts)
+	key := "ss"
+	data := []byte{1, 2, 3}
+	if err := s.writeStream(key, bytes.NewReader(data)); err != nil {
+		t.Error(err)
+	}
+	if err := s.Delete(key); err != nil {
+		t.Error(err)
+	}
+
 }
 
 func TestStorage(t *testing.T) {
 	opts := StoreOpts{PathTransformFunc: DefaultPathTransformFunc}
 
 	s := NewStore(opts)
-	data := bytes.NewReader([]byte("some bytess"))
-	err := s.writeStream("myspecialPic", data)
+	data := []byte("some bytess")
+	key := "Moe's Specials"
+	err := s.writeStream(key, bytes.NewReader(data))
 	if err != nil {
 		t.Error(err)
 	}
+	r, err := s.Read(key)
 
+	if err != nil {
+		t.Error(err)
+	}
+	b, _ := io.ReadAll(r)
+	if string(b) != string(data) {
+		t.Errorf("want [%s] have [%s]", data, b)
+	}
+
+	err = s.Delete(key)
+	if err != nil {
+		t.Errorf("failed to delete")
+	}
 }

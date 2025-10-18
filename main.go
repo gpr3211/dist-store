@@ -20,7 +20,23 @@ func OnPeer(p2p.Peer) error {
 }
 
 func main() {
+	/*
+		handshake := func(conn net.Conn) error {
+			secureConn, err := p2p.SecureHandshake(conn)
+			if err != nil {
+				return err
+			}
 
+			// replace underlying conn with the encrypted one
+			if tcpPeer, ok := conn.(*net.TCPConn); ok {
+				_ = tcpPeer // just illustrating, you can assign back if desired
+			}
+
+			// continue using secureConn transparently
+			conn = secureConn
+			return nil
+		}
+	*/
 	tcpOpts := p2p.TCPTransportOpts{
 		ListenAddr:    ":3000",
 		HandshakeFunc: p2p.NOPHandshakefunc,
