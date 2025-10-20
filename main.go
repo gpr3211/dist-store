@@ -20,8 +20,7 @@ func OnPeer(p2p.Peer) error {
 	return nil
 }
 
-func main() {
-
+func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 	handshake := func(p p2p.Peer) error {
 		z := p.(*p2p.TCPPeer)
 
@@ -35,13 +34,7 @@ func main() {
 	}
 
 	tcpOpts := p2p.TCPTransportOpts{
-		ListenAddr:    ":3000",
-		HandshakeFunc: handshake,
-		Decoder:       &p2p.DefaultDecoder{},
-		OnPeer:        OnPeer,
-	}
-	tcpOpts2 := p2p.TCPTransportOpts{
-		ListenAddr:    ":4000",
+		ListenAddr:    addr,
 		HandshakeFunc: handshake,
 		Decoder:       &p2p.DefaultDecoder{},
 		OnPeer:        OnPeer,
@@ -51,20 +44,17 @@ func main() {
 	serverOpts := server.ServerOpts{
 		PathTransformFunc: server.CASPathTransform,
 		Transport:         tr,
-		Nodes:             []string{":4000"},
+		Nodes:             nodes,
 	}
-	tr2 := p2p.NewTCPTransport(tcpOpts2)
-	serverOpts2 := server.ServerOpts{
-		PathTransformFunc: server.CASPathTransform,
-		Transport:         tr2,
-		Nodes:             []string{":3000"},
-	}
-	serverOpts.StorageRoot = "t1"
 
-	serverOpts2.StorageRoot = "t2"
+	return server.NewFileServer(serverOpts)
 
-	s := server.NewFileServer(serverOpts)
-	s2 := server.NewFileServer(serverOpts2)
+}
+
+func main() {
+	s := makeServ(":3000", "s1")
+
+	s2 := makeServ(":4000", "s2", ":3000")
 
 	cfg := &Config{
 		FServer: s,
