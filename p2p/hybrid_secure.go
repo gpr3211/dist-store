@@ -128,9 +128,13 @@ func hybridHandshakeInternal(conn net.Conn, outbound bool) (*HybridSecureConn, e
 		if err != nil {
 			return nil, fmt.Errorf("read peer hash: %w", err)
 		}
+
 		myHash := sha256.Sum256(aesKey)
 		if !bytes.Equal(peerHashBytes, myHash[:]) {
-			return nil, fmt.Errorf("handshake confirmation mismatch")
+			log.Println("WARNING POSSIBLE MITM ATTACK !")
+			//TODO:
+			// add to logger.
+			return nil, ErrHandshakeHashMismatch
 		}
 	} else {
 		// Responder: receive encrypted key, decrypt, then send confirmation hash

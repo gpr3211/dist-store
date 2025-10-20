@@ -737,7 +737,7 @@ func TestMITMAttackPrevention(t *testing.T) {
 	case err := <-clientError:
 		// Client should detect the mismatch via confirmation hash
 		require.Error(t, err, "Client should detect MITM attack")
-		assert.Contains(t, err.Error(), "handshake confirmation mismatch",
+		assert.Contains(t, err, "handshake confirmation mismatch",
 			"Should fail due to hash mismatch")
 		t.Log("✓ MITM attack detected by client: ", err)
 

@@ -7,6 +7,7 @@ import "errors"
 var ErrHandshakeInvalid = errors.New("bad handshake")
 
 var ErrHandshakeTimeout = errors.New("bad handshake")
+var ErrHandshakeHashMismatch = errors.New("handshake confirmation mismatch") // possible attack LOG
 
 type HandshakeFunc func(Peer) error
 
