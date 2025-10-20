@@ -21,6 +21,8 @@ var _ Peer = (*TCPPeer)(nil)
 func (t TCPPeer) Close() error {
 	return t.Close()
 }
+func (t *TCPPeer) Send([]byte) error { return nil }
+func (t *TCPPeer) CloseStream()      {}
 func NewTCPPeer(con net.Conn, out bool) *TCPPeer {
 
 	privKey, _ := rsa.GenerateKey(rand.Reader, 2048)

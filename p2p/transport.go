@@ -10,6 +10,8 @@ type Peer interface {
 	net.Conn
 	Sec
 	Close() error
+	Send([]byte) error
+	CloseStream()
 }
 
 // conn between peers
