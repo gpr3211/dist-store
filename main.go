@@ -24,7 +24,7 @@ func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 	handshake := func(p p2p.Peer) error {
 		z := p.(*p2p.TCPPeer)
 
-		secureConn, err := p2p.SecureHandshake(z)
+		secureConn, err := p2p.HybridHandshake(z)
 		if err != nil {
 			return err
 		}

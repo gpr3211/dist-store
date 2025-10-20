@@ -2,9 +2,11 @@ package p2p
 
 import "errors"
 
-// ErrInvalidHandshake is returned if the handshake
+// ErrHandshakeInvalid is returned if the handshake
 // beteween local and remote node could not be established.
-var ErrInvalidHandshake = errors.New("bad handshake")
+var ErrHandshakeInvalid = errors.New("bad handshake")
+
+var ErrHandshakeTimeout = errors.New("bad handshake")
 
 type HandshakeFunc func(Peer) error
 
