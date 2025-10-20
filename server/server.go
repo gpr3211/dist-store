@@ -1,23 +1,56 @@
-package main
+package server
 
 import (
 	"fmt"
 	"log"
 	"log/slog"
 	"net"
+	"os"
 	"sync"
 
 	"github.com/gpr3211/dist-store/p2p"
+	"github.com/spf13/viper"
 )
 
 type ServerOpts struct {
-	ListenAddr        string
-	StorageRoot       string
+	configJson
+	ID                int    `mapstructure:"id"`
+	key               []byte `mapstructure:"key"`
 	PathTransformFunc PathTransformFunc
-	key               []byte
 	Transport         p2p.Transport
 	logger            *slog.Logger
 	Nodes             []string
+}
+type configJson struct {
+	ListenAddr  string `mapstructure:"addr"`
+	StorageRoot string `mapstructure:"root"`
+}
+
+var CONFIG = ".config.json"
+
+func LoadConfig() error {
+	if len(os.Args) == 1 {
+		fmt.Println("Using Default Config")
+	} else {
+		CONFIG = os.Args[1]
+	}
+	viper.SetConfigType("json")
+	viper.SetConfigFile(CONFIG)
+	fmt.Printf("Using config: %s\n", viper.ConfigFileUsed())
+	viper.ReadInConfig()
+	if viper.IsSet("addr") {
+		fmt.Println("Address: ", viper.Get("addr"))
+	} else {
+		fmt.Println("Address not set")
+	}
+	var t ServerOpts
+	err := viper.Unmarshal(&t)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
 }
 
 type FileServer struct {
@@ -100,6 +133,7 @@ func (f *FileServer) Start() error {
 	if err := f.Transport.ListenAndAccept(); err != nil {
 		return err
 	}
+	LoadConfig()
 
 	f.bootsrapNodes()
 	f.readLoop()

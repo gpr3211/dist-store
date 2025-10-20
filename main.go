@@ -3,16 +3,15 @@ package main
 import (
 	"fmt"
 	"log"
-	"log/slog"
-	"os"
 	"time"
 
 	"github.com/gpr3211/dist-store/p2p"
+	"github.com/gpr3211/dist-store/server"
 )
 
 type Config struct {
 	addr    string
-	FServer *FileServer
+	FServer *server.FileServer
 	secret  []byte
 }
 
@@ -49,53 +48,38 @@ func main() {
 	}
 
 	tr := p2p.NewTCPTransport(tcpOpts)
-	serverOpts := ServerOpts{
-		PathTransformFunc: CASPathTransform,
+	serverOpts := server.ServerOpts{
+		PathTransformFunc: server.CASPathTransform,
 		Transport:         tr,
-		StorageRoot:       "data",
 		Nodes:             []string{":4000"},
 	}
 	tr2 := p2p.NewTCPTransport(tcpOpts2)
-	serverOpts2 := ServerOpts{
-		PathTransformFunc: CASPathTransform,
+	serverOpts2 := server.ServerOpts{
+		PathTransformFunc: server.CASPathTransform,
 		Transport:         tr2,
-		StorageRoot:       "data",
 		Nodes:             []string{":3000"},
 	}
+	serverOpts.StorageRoot = "t1"
 
-	s := NewFileServer(serverOpts)
-	s2 := NewFileServer(serverOpts2)
+	serverOpts2.StorageRoot = "t2"
 
-	logFile, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		panic(err)
-	}
-	defer logFile.Close()
+	s := server.NewFileServer(serverOpts)
+	s2 := server.NewFileServer(serverOpts2)
 
-	// Create a JSON handler that writes to the file
-	handler := slog.NewJSONHandler(logFile, &slog.HandlerOptions{
-		Level:     slog.LevelInfo,
-		AddSource: true, // Adds source file and line number
-	})
-
-	logger := slog.New(handler)
 	cfg := &Config{
 		FServer: s,
 	}
 	cfg2 := &Config{FServer: s2}
-	cfg.FServer.logger = logger
-
-	cfg2.FServer.logger = logger
 
 	go func() {
-		err = cfg.FServer.Start()
+		err := cfg.FServer.Start()
 		if err != nil {
 			log.Fatalln("Failed to start server")
 		}
 	}()
 	time.Sleep(time.Millisecond * 100)
 	go func() {
-		err = cfg2.FServer.Start()
+		err := cfg2.FServer.Start()
 		if err != nil {
 			log.Fatalln("Failed to start server")
 		}
