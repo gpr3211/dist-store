@@ -26,8 +26,8 @@ func (s *SecureConn) Write(p []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	n, err := s.Conn.Write(enc)
-	return n, err
+	_, err = s.Conn.Write(enc)
+	return len(p), err
 }
 
 // Read decrypts received data with our private key
@@ -38,7 +38,7 @@ func (s *SecureConn) Read(p []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	dec, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, s.private(), buf[:n], nil)
+	dec, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, s.priv, buf[:n], nil)
 	if err != nil {
 		return 0, err
 	}
@@ -55,6 +55,7 @@ func SecureHandshake(conn Peer) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	pub := &priv.PublicKey
 
 	// 2. Exchange public keys

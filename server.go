@@ -59,7 +59,7 @@ func (fs *FileServer) OnPeer(p p2p.Peer) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 	fs.peers[p.RemoteAddr()] = p
-	fs.logger.Info("connect", fmt.Sprintf("%s Accepted conn from %s", p.LocalAddr(), p.RemoteAddr()))
+	log.Printf("%s Accepted conn from %s", p.LocalAddr(), p.RemoteAddr())
 
 	return nil
 }

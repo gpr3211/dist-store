@@ -22,31 +22,28 @@ func OnPeer(p2p.Peer) error {
 }
 
 func main() {
-	/*
-		handshake := func(p p2p.Peer) error {
-					z := p.(*p2p.TCPPeer)
 
-					secureConn, err := p2p.SecureHandshake(z)
-					if err != nil {
-						return err
-					}
-					z.Conn = secureConn
-					// continue using secureConn transparently
-					return nil
-				},
+	handshake := func(p p2p.Peer) error {
+		z := p.(*p2p.TCPPeer)
 
+		secureConn, err := p2p.SecureHandshake(z)
+		if err != nil {
+			return err
 		}
-	*/
+		z.Conn = secureConn
+		// continue using secureConn transparently
+		return nil
+	}
 
 	tcpOpts := p2p.TCPTransportOpts{
 		ListenAddr:    ":3000",
-		HandshakeFunc: p2p.NOPHandshakefunc,
+		HandshakeFunc: handshake,
 		Decoder:       &p2p.DefaultDecoder{},
 		OnPeer:        OnPeer,
 	}
 	tcpOpts2 := p2p.TCPTransportOpts{
 		ListenAddr:    ":4000",
-		HandshakeFunc: p2p.NOPHandshakefunc,
+		HandshakeFunc: handshake,
 		Decoder:       &p2p.DefaultDecoder{},
 		OnPeer:        OnPeer,
 	}

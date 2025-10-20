@@ -19,7 +19,7 @@ type TCPPeer struct {
 var _ Peer = (*TCPPeer)(nil)
 
 func (t TCPPeer) Close() error {
-	return t.Close()
+	return t.Conn.Close()
 }
 func (t *TCPPeer) Send([]byte) error { return nil }
 func (t *TCPPeer) CloseStream()      {}
