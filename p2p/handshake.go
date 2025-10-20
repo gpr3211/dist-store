@@ -8,4 +8,7 @@ var ErrInvalidHandshake = errors.New("bad handshake")
 
 type HandshakeFunc func(Peer) error
 
-func NOPHandshakefunc(Peer) error { return nil }
+func NOPHandshakefunc(Peer) error {
+
+	return nil
+}

@@ -7,6 +7,23 @@ import (
 	"testing"
 )
 
+func newStore() *Store {
+	opts := StoreOpts{
+		PathTransformFunc: CASPathTransform,
+	}
+	s := NewStore(opts)
+	return s
+
+}
+
+func teardown(t *testing.T, s *Store) {
+	if err := s.Clear(); err != nil {
+		t.Error(err)
+		return
+	}
+
+}
+
 // TODO: fix
 func TestPathTransform(t *testing.T) {
 	key := "best-pics"
@@ -42,6 +59,8 @@ func TestStorage(t *testing.T) {
 	opts := StoreOpts{PathTransformFunc: DefaultPathTransformFunc}
 
 	s := NewStore(opts)
+
+	defer teardown(t, s)
 	data := []byte("some bytess")
 	key := "Moe's Specials"
 	err := s.writeStream(key, bytes.NewReader(data))
@@ -63,8 +82,6 @@ func TestStorage(t *testing.T) {
 	if ok := s.Has(key); !ok {
 		t.Errorf("expected to have key")
 	}
-
-	err = s.Delete(key)
 
 	if err != nil {
 		t.Errorf("failed to delete")

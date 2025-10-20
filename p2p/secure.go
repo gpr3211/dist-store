@@ -49,7 +49,7 @@ func (s *SecureConn) Read(p []byte) (int, error) {
 func (s *SecureConn) private() *rsa.PrivateKey { return s.priv }
 
 // HandshakeFunc performs RSA key exchange and returns a *SecureConn
-func SecureHandshake(conn net.Conn) (net.Conn, error) {
+func SecureHandshake(conn Peer) (net.Conn, error) {
 	// 1. Generate our RSA keys
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {

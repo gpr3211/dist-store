@@ -71,6 +71,7 @@ func (s *Store) Delete(key string) error {
 	return os.RemoveAll(s.Root + "/" + pkey.FirstPath())
 
 }
+func (s *Store) Clear() error { return os.RemoveAll(s.Root) }
 
 // Has checks if the store contains a key.
 // - returns true if found.
@@ -78,12 +79,9 @@ func (s *Store) Has(key string) bool {
 	pk := s.PathTransformFunc(key)
 
 	rootPath := s.Root + "/" + pk.Fullpath()
-	_, err := os.Stat(rootPath)
+	_, err := os.Stat(rootPath) // check if file exists.
 
-	if errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-	return true
+	return !errors.Is(err, os.ErrNotExist)
 }
 
 func (s *Store) Read(key string) (io.Reader, error) {
@@ -118,6 +116,11 @@ func NewStore(opts StoreOpts) *Store {
 	return &Store{
 		StoreOpts: opts,
 	}
+}
+
+func (s *Store) Write(key string, r io.Reader) error {
+
+	return s.writeStream(key, r)
 }
 
 func (s *Store) readStream(key string) (io.Reader, error) {
