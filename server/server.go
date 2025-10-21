@@ -2,14 +2,12 @@ package server
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
-	"net"
-	"os"
 	"sync"
 
 	"github.com/gpr3211/dist-store/p2p"
-	"github.com/spf13/viper"
 )
 
 type ServerOpts struct {
@@ -26,49 +24,16 @@ type configJson struct {
 	StorageRoot string `mapstructure:"root"`
 }
 
-var CONFIG = ".config.json"
-
-func LoadConfig() error {
-	if len(os.Args) == 1 {
-		fmt.Println("Using Default Config")
-	} else {
-		CONFIG = os.Args[1]
-	}
-	viper.SetConfigType("json")
-	viper.SetConfigFile(CONFIG)
-	fmt.Printf("Using config: %s\n", viper.ConfigFileUsed())
-	viper.ReadInConfig()
-	if viper.IsSet("addr") {
-		fmt.Println("Address: ", viper.Get("addr"))
-	} else {
-		fmt.Println("Address not set")
-	}
-	var t ServerOpts
-	err := viper.Unmarshal(&t)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	return nil
-}
-
 type FileServer struct {
 	ServerOpts
 	store *Store
-	peers map[net.Addr]p2p.Peer
+	peers map[string]p2p.Peer
 	mu    sync.Mutex
 	qChan chan struct{}
 }
 
-type Message struct {
-	Payload any
-}
+func (f *FileServer) SaveData(key string, r io.Reader) {
 
-type MessageStoreFile struct {
-	ID   string
-	Key  string
-	Size int64
 }
 
 func (fs *FileServer) bootsrapNodes() error {
@@ -91,7 +56,7 @@ func (fs *FileServer) bootsrapNodes() error {
 func (fs *FileServer) OnPeer(p p2p.Peer) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
-	fs.peers[p.RemoteAddr()] = p
+	fs.peers[p.RemoteAddr().String()] = p
 	log.Printf("%s Accepted conn from %s", p.LocalAddr(), p.RemoteAddr())
 
 	return nil
@@ -102,6 +67,7 @@ func NewFileServer(opts ServerOpts) *FileServer {
 		ServerOpts: opts,
 		store:      NewStore(op),
 		qChan:      make(chan struct{}),
+		peers:      make(map[string]p2p.Peer),
 	}
 }
 

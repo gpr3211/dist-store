@@ -21,7 +21,7 @@ func OnPeer(p2p.Peer) error {
 }
 
 func makeServ(addr string, root string, nodes ...string) *server.FileServer {
-	handshake := func(p p2p.Peer) error {
+	_ = func(p p2p.Peer) error {
 		z := p.(*p2p.TCPPeer)
 
 		secureConn, err := p2p.HybridHandshake(z)
@@ -35,7 +35,7 @@ func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 
 	tcpOpts := p2p.TCPTransportOpts{
 		ListenAddr:    addr,
-		HandshakeFunc: handshake,
+		HandshakeFunc: p2p.NOPHandshakefunc,
 		Decoder:       &p2p.DefaultDecoder{},
 		OnPeer:        OnPeer,
 	}

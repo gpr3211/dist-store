@@ -23,6 +23,9 @@ func (t TCPPeer) Close() error {
 }
 func (t *TCPPeer) Send([]byte) error { return nil }
 func (t *TCPPeer) CloseStream()      {}
+func (t *TCPPeer) RemoteAddr() net.Addr {
+	return t.Conn.RemoteAddr()
+}
 func NewTCPPeer(con net.Conn, out bool) *TCPPeer {
 
 	privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
