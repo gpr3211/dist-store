@@ -42,7 +42,7 @@ func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 
 	tr := p2p.NewTCPTransport(tcpOpts)
 	serverOpts := server.ServerOpts{
-		PathTransformFunc: server.CASPathTransform,
+		PathTransformFunc: server.DefaultPathTransformFunc,
 		Transport:         tr,
 		Nodes:             nodes,
 	}

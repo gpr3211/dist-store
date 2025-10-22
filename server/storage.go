@@ -2,8 +2,6 @@ package server
 
 import (
 	"bytes"
-	"crypto/sha1"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -13,12 +11,11 @@ import (
 
 type PathKey struct {
 	ID       string
-	PathName string
 	Filename string
 }
 
 func (p PathKey) Fullpath() string {
-	return fmt.Sprintf("%s/%s/%s", p.ID, p.PathName, p.Filename)
+	return fmt.Sprintf("%s/%s", p.ID, p.Filename)
 }
 
 func (p PathKey) FirstPath() string {
@@ -26,26 +23,14 @@ func (p PathKey) FirstPath() string {
 	return p.ID
 }
 
-// CASPathTransform creates path: user_id/hash/hash
-func CASPathTransform(id, key string) PathKey {
-	hash := sha1.Sum([]byte(id))
-	hashString := hex.EncodeToString(hash[:])
-
-	return PathKey{
-		ID:       id,
-		PathName: hashString,
-		Filename: key,
-	}
-}
-
 type PathTransformFunc func(string, string) PathKey
 
-// DefaultPathTransformFunc creates path: user_id/item_name/data
+// DefaultPathTransformFunc creates path: user_id/name/data
 var DefaultPathTransformFunc = func(id, key string) PathKey {
+
 	return PathKey{
 		ID:       id,
-		PathName: key,
-		Filename: "data", // Fixed filename as "data"
+		Filename: key, // Fixed filename as "data"
 	}
 }
 
@@ -82,6 +67,11 @@ func (s *Store) Read(id, key string) (io.Reader, error) {
 	return buf, err
 }
 
+// Write writes to disk.
+func (s *Store) Write(id, key string, r io.Reader) error {
+	return s.writeStream(id, key, r)
+}
+
 const defaultRootFolder = "ggdata"
 
 type StoreOpts struct {
@@ -105,9 +95,12 @@ func NewStore(opts StoreOpts) *Store {
 func (s *Store) OpenFileForWrite(id, key string) (*os.File, error) {
 	pathkey := s.PathTransformFunc(id, key)
 	// Create full directory structure: root/user_id/item_name
-	fullDir := s.Root + "/" + pathkey.ID + "/" + pathkey.PathName
-	if err := os.MkdirAll(fullDir, os.ModePerm); err != nil {
-		return nil, err
+	fullDir := s.Root + "/" + pathkey.ID
+	_, err := os.Stat(fullDir)
+	if errors.Is(err, os.ErrNotExist) {
+		if err := os.MkdirAll(fullDir, os.ModePerm); err != nil {
+			return nil, err
+		}
 	}
 	root, err := os.OpenRoot(s.Root)
 	if err != nil {
@@ -133,10 +126,6 @@ func (s *Store) writeStream(id, key string, r io.Reader) error {
 	}
 	log.Printf("Written (%d) bytes to disk", n)
 	return nil
-}
-
-func (s *Store) Write(id, key string, r io.Reader) error {
-	return s.writeStream(id, key, r)
 }
 
 func (s *Store) readStream(id, key string) (io.Reader, error) {
