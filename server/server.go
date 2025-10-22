@@ -68,13 +68,34 @@ func NewFileServer(opts ServerOpts) *FileServer {
 		store:      NewStore(op),
 		qChan:      make(chan struct{}),
 		peers:      make(map[string]p2p.Peer),
+		mu:         sync.Mutex{},
 	}
 }
 
 func (f *FileServer) Stop() {
+	f.mu.Lock()
+	for _, v := range f.peers {
+		v.Close()
+	}
 
+	f.mu.Unlock()
 	close(f.qChan)
 
+}
+
+type Payload struct {
+	Key  string
+	Data []byte
+}
+
+// broadcast send key file to all connected peers.
+func (fs *FileServer) broadcast() error {
+	return nil
+}
+
+func (fs *FileServer) StoreData(key string, r io.Reader) error {
+
+	return nil
 }
 func (f *FileServer) readLoop() {
 	defer func() {

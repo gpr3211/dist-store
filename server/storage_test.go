@@ -27,15 +27,16 @@ func teardown(t *testing.T, s *Store) {
 // TODO: fix
 func TestPathTransform(t *testing.T) {
 	key := "best-pics"
-	pathname := CASPathTransform(key)
+	id := "user-test"
+	pathname := CASPathTransform(id, key)
 	fmt.Println(pathname)
-	expectedPath := "ad1e7/d6c18/15d8e/3f9bf/a634c/12d6a/3f31f/9894e"
-	expectedO := "ad1e7d6c1815d8e3f9bfa634c12d6a3f31f9894e"
+	expectedPath := "f549249a2c3e3c3d8dd9da28e707523d359cfb46"
+	t.Log(pathname.Fullpath())
 	if pathname.PathName != expectedPath {
-		t.Error("pathname not expected")
+		t.Errorf("pathname not expected %s", pathname.PathName)
 	}
-	if pathname.Filename != expectedO {
-		t.Errorf("Filename: got [%s] expected [%s]", pathname.Filename, expectedO)
+	if pathname.Filename != key {
+		t.Errorf("Filename: got [%s] expected [%s]", pathname.Filename, expectedPath)
 	}
 }
 
@@ -45,11 +46,12 @@ func TestStoreDelete(t *testing.T) {
 	}
 	s := NewStore(opts)
 	key := "ss"
+	id := "user-test"
 	data := []byte{1, 2, 3}
-	if err := s.writeStream(key, bytes.NewReader(data)); err != nil {
+	if err := s.writeStream(id, key, bytes.NewReader(data)); err != nil {
 		t.Error(err)
 	}
-	if err := s.Delete(key); err != nil {
+	if err := s.Delete(id, key); err != nil {
 		t.Error(err)
 	}
 
@@ -63,12 +65,13 @@ func TestStorage(t *testing.T) {
 	defer teardown(t, s)
 	data := []byte("some bytess")
 	key := "Moe's Specials"
-	err := s.writeStream(key, bytes.NewReader(data))
+	id := "user-test"
+	err := s.writeStream(id, key, bytes.NewReader(data))
 	if err != nil {
 		t.Error(err)
 	}
 
-	r, err := s.Read(key)
+	r, err := s.Read(id, key)
 	if err != nil {
 		t.Error(err)
 	}
@@ -79,7 +82,7 @@ func TestStorage(t *testing.T) {
 		t.Errorf("want [%s] have [%s]", data, b)
 	}
 	t.Attr("Storage", "test Has func")
-	if ok := s.Has(key); !ok {
+	if ok := s.Has(id, key); !ok {
 		t.Errorf("expected to have key")
 	}
 
