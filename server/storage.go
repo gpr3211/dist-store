@@ -12,6 +12,7 @@ import (
 type PathKey struct {
 	ID       string
 	Filename string
+	Hash     string
 }
 
 func (p PathKey) Fullpath() string {
@@ -19,19 +20,20 @@ func (p PathKey) Fullpath() string {
 }
 
 func (p PathKey) FirstPath() string {
-	// Return just the user ID (first segment)
 	return p.ID
+}
+func (p PathKey) SetHash() {
+
 }
 
 type PathTransformFunc func(string, string) PathKey
 
-// DefaultPathTransformFunc creates path: user_id/name/data
+// DefaultPathTransformFunc creates path: /id/data
 var DefaultPathTransformFunc = func(id, key string) PathKey {
 
 	return PathKey{
 		ID:       id,
-		Filename: key, // Fixed filename as "data"
-	}
+		Filename: key}
 }
 
 type Store struct {
@@ -40,11 +42,16 @@ type Store struct {
 
 func (s *Store) Delete(id, key string) error {
 	pkey := s.PathTransformFunc(id, key)
-	// Delete the entire user directory: root/user_id
-	return os.RemoveAll(s.Root + "/" + pkey.Fullpath())
+	f, err := os.OpenRoot(s.Root)
+	if err != nil {
+		return err
+	}
+	return f.Remove(pkey.Fullpath())
+
 }
 
 func (s *Store) Clear() error {
+
 	return os.RemoveAll(s.Root)
 }
 

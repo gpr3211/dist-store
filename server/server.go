@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -32,7 +33,17 @@ type FileServer struct {
 	qChan chan struct{}
 }
 
-func (f *FileServer) SaveData(key string, r io.Reader) {
+func (f *FileServer) SaveData(id, key string, r io.Reader) error {
+	err := f.store.Write(id, key, r)
+	if err != nil {
+		return err
+	}
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, r)
+	if err != nil {
+		return err
+	}
+	return err
 
 }
 
@@ -93,10 +104,6 @@ func (fs *FileServer) broadcast() error {
 	return nil
 }
 
-func (fs *FileServer) StoreData(key string, r io.Reader) error {
-
-	return nil
-}
 func (f *FileServer) readLoop() {
 	defer func() {
 
