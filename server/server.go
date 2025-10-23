@@ -2,13 +2,14 @@ package server
 
 import (
 	"bytes"
+	"encoding/gob"
+	"errors"
 	"fmt"
+	"github.com/gpr3211/dist-store/p2p"
 	"io"
 	"log"
 	"log/slog"
 	"sync"
-
-	"github.com/gpr3211/dist-store/p2p"
 )
 
 type ServerOpts struct {
@@ -38,12 +39,18 @@ func (f *FileServer) SaveData(id, key string, r io.Reader) error {
 	if err != nil {
 		return err
 	}
+
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, r)
 	if err != nil {
 		return err
 	}
-	return err
+	p := &Payload{
+		Key:  key,
+		Data: buf.Bytes(),
+	}
+	fmt.Println(buf.Bytes())
+	return f.broadcast(p)
 
 }
 
@@ -68,8 +75,7 @@ func (fs *FileServer) OnPeer(p p2p.Peer) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 	fs.peers[p.RemoteAddr().String()] = p
-	log.Printf("%s Accepted conn from %s", p.LocalAddr(), p.RemoteAddr())
-
+	log.Printf("Accepted conn from %s", p.RemoteAddr())
 	return nil
 }
 func NewFileServer(opts ServerOpts) *FileServer {
@@ -81,6 +87,15 @@ func NewFileServer(opts ServerOpts) *FileServer {
 		peers:      make(map[string]p2p.Peer),
 		mu:         sync.Mutex{},
 	}
+}
+
+func (f *FileServer) Get(id, key string) (io.Reader, error) {
+	if f.store.Has(id, key) {
+		fmt.Printf("item found locally, fetching . . .n")
+		r, err := f.store.Read(id, key)
+		return r, err
+	}
+	return nil, errors.New("not found")
 }
 
 func (f *FileServer) Stop() {
@@ -100,8 +115,19 @@ type Payload struct {
 }
 
 // broadcast send key file to all connected peers.
-func (fs *FileServer) broadcast() error {
-	return nil
+func (fs *FileServer) broadcast(msg *Payload) error {
+	fmt.Println("broadcasting ... to ", len(fs.peers))
+	buf := new(bytes.Buffer)
+	if err := gob.NewEncoder(buf).Encode(msg); err != nil {
+		return err
+	}
+	peers := []io.Writer{}
+	for addr, peer := range fs.peers {
+		peers = append(peers, peer)
+		fmt.Println("added peer", " ", addr)
+	}
+	mw := io.MultiWriter(peers...)
+	return gob.NewEncoder(mw).Encode(msg)
 }
 
 func (f *FileServer) readLoop() {
@@ -114,7 +140,12 @@ func (f *FileServer) readLoop() {
 	for {
 		select {
 		case msg := <-f.Transport.Consume(): // read from transpot msg chan
-			fmt.Printf("Got %+v\n", msg.Payload)
+			fmt.Println("got msg")
+			var p Payload
+			if err := gob.NewDecoder(bytes.NewReader(msg.Payload)).Decode(&p); err != nil {
+				panic(err)
+			}
+			fmt.Printf("%+v\n", p)
 
 		case <-f.qChan:
 			return

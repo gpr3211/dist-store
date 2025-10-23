@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"time"
 
@@ -16,29 +15,11 @@ type Config struct {
 	secret  []byte
 }
 
-func OnPeer(p2p.Peer) error {
-	fmt.Println("Doing soem logic outside of transport tcp blah ")
-	return nil
-}
-
 func makeServ(addr string, root string, nodes ...string) *server.FileServer {
-	_ = func(p p2p.Peer) error {
-		z := p.(*p2p.TCPPeer)
-
-		secureConn, err := p2p.HybridHandshake(z)
-		if err != nil {
-			return err
-		}
-		z.Conn = secureConn
-		// continue using secureConn transparently
-		return nil
-	}
-
 	tcpOpts := p2p.TCPTransportOpts{
 		ListenAddr:    addr,
 		HandshakeFunc: p2p.NOPHandshakefunc,
 		Decoder:       &p2p.DefaultDecoder{},
-		OnPeer:        OnPeer,
 	}
 
 	tr := p2p.NewTCPTransport(tcpOpts)
@@ -47,8 +28,10 @@ func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 		Transport:         tr,
 		Nodes:             nodes,
 	}
-
-	return server.NewFileServer(serverOpts)
+	serverOpts.StorageRoot = root
+	s := server.NewFileServer(serverOpts)
+	tr.Config.OnPeer = s.OnPeer
+	return s
 
 }
 
@@ -75,6 +58,8 @@ func main() {
 			log.Fatalln("Failed to start server")
 		}
 	}()
+	time.Sleep(time.Second)
+	cfg.FServer.SaveData("user-test", "data", bytes.NewReader([]byte("test string")))
 
 	// Create a logger with the file handler
 

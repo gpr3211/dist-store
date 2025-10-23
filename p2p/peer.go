@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	"crypto/rand"
 	"crypto/rsa"
 	"net"
 	"sync"
@@ -30,12 +29,9 @@ func (t *TCPPeer) CloseStream()      {}
 
 func NewTCPPeer(con net.Conn, out bool) *TCPPeer {
 
-	privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
-
 	peer := &TCPPeer{
 		outbound: out,
 		wg:       &sync.WaitGroup{},
-		pKey:     *privKey,
 		Conn:     con,
 	}
 
