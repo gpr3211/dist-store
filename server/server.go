@@ -35,21 +35,24 @@ type FileServer struct {
 }
 
 func (f *FileServer) SaveData(id, key string, r io.Reader) error {
-	err := f.store.Write(id, key, r)
+
+	buf := new(bytes.Buffer)
+	tee := io.TeeReader(r, buf)
+
+	err := f.store.Write(id, key, tee)
 	if err != nil {
 		return err
 	}
 
-	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, r)
 	if err != nil {
 		return err
 	}
 	p := &Payload{
+		ID:   id,
 		Key:  key,
 		Data: buf.Bytes(),
 	}
-	fmt.Println(buf.Bytes())
 	return f.broadcast(p)
 
 }
@@ -110,6 +113,7 @@ func (f *FileServer) Stop() {
 }
 
 type Payload struct {
+	ID   string
 	Key  string
 	Data []byte
 }
@@ -132,7 +136,6 @@ func (fs *FileServer) broadcast(msg *Payload) error {
 
 func (f *FileServer) readLoop() {
 	defer func() {
-
 		log.Printf("Closing server on %s", f.ListenAddr)
 		f.Transport.Close()
 		f.Stop()
@@ -143,9 +146,9 @@ func (f *FileServer) readLoop() {
 			fmt.Println("got msg")
 			var p Payload
 			if err := gob.NewDecoder(bytes.NewReader(msg.Payload)).Decode(&p); err != nil {
-				panic(err)
+				//				panic(err)
 			}
-			fmt.Printf("%+v\n", p)
+			fmt.Printf("%v", p)
 
 		case <-f.qChan:
 			return
