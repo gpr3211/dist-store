@@ -58,7 +58,7 @@ func main() {
 
 	go cfg.FServer.Start(ctx)
 
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 3)
 	go cfg2.FServer.Start(ctx)
 
 	time.Sleep(time.Second * 3) // give time to start and establish conn.
