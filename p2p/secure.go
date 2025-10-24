@@ -70,7 +70,7 @@ func SecureHandshake(conn Peer) (net.Conn, error) {
 		return nil, fmt.Errorf("recv pubkey: %w", err)
 	}
 
-	fmt.Println(" Handshake OK with", conn.RemoteAddr())
+	//	fmt.Println(" Handshake OK with", conn.RemoteAddr())
 
 	// 3. Wrap connection
 	return &SecureConn{Conn: conn, priv: priv, pub: &peerKey}, nil

@@ -55,11 +55,10 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	done := make(chan bool)
 
 	go cfg.FServer.Start(ctx)
 
-	time.Sleep(time.Second / 2)
+	time.Sleep(time.Second * 2)
 	go cfg2.FServer.Start(ctx)
 	time.Sleep(time.Second * 2)
 
@@ -72,7 +71,7 @@ func main() {
 	forceQ := make(chan os.Signal, 1)
 	signal.Notify(forceQ, os.Interrupt, syscall.SIGTERM)
 	select {
-	case <-done:
+	case <-cfg.FServer.QuitChan:
 		slog.Info("Shutdown complete .")
 	case <-forceQ:
 		slog.Info("force quit")

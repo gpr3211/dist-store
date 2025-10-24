@@ -106,7 +106,6 @@ func TestHybridSecureConn10MBFile(t *testing.T) {
 		var meta model.Message
 		gob.NewDecoder(bytes.NewReader(metaBuf[:n])).Decode(&meta)
 		receivedMeta := meta.Payload.(model.MessageStoreFile)
-		t.Logf("Received metadata: ID=%s, Size=%d", receivedMeta.ID, receivedMeta.Size)
 
 		// Receive file data in larger chunks (AES is fast!)
 		receivedData = make([]byte, 0, receivedMeta.Size)

@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-// HybridSecureConn wraps a net.Conn with AES-GCM using an RSA-based handshake.
+// HybridSecureConn wraps a net.Conn with AES-GCM using a RSA handshake.
 // Call HybridHandshake(conn, outbound) to create one side of the secured connection.
 type HybridSecureConn struct {
 	net.Conn
@@ -104,7 +104,7 @@ func hybridHandshakeInternal(conn net.Conn, outbound bool) (*HybridSecureConn, e
 	}
 
 	// log short fingerprint to help manually verify / detect MITM
-	log.Printf("peer pub fingerprint=%s", fingerprint(peerPub))
+	//	log.Printf("peer pub fingerprint=%s", fingerprint(peerPub)) TODO:
 
 	var aesKey []byte
 
@@ -183,7 +183,7 @@ func hybridHandshakeInternal(conn net.Conn, outbound bool) (*HybridSecureConn, e
 		h.nonce = binary.BigEndian.Uint64(ctrBytes[:])
 	}
 
-	log.Printf("hybrid handshake OK remote=%s", conn.RemoteAddr())
+	//	log.Printf("hybrid handshake OK remote=%s", conn.RemoteAddr())
 	return h, nil
 }
 
@@ -211,7 +211,9 @@ func HybridHandshake(conn Peer) (net.Conn, error) {
 	return h, err
 }
 
-// Write encrypts and sends framed [len][nonce||ciphertext]
+// Write encrypts and sends data as :
+//
+//	-- [len][nonce||ciphertext]
 func (h *HybridSecureConn) Write(p []byte) (int, error) {
 	h.writeMu.Lock()
 	defer h.writeMu.Unlock()

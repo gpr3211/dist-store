@@ -87,7 +87,6 @@ func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 	defer func() {
 		fmt.Printf("dropping peer connection: %s\n", peer.RemoteAddr())
 		conn.Close()
-
 	}()
 
 	if c, err := t.Config.HandshakeFunc(peer); err != nil {

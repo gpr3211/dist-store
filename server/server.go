@@ -29,10 +29,11 @@ type configJson struct {
 
 type FileServer struct {
 	ServerOpts
-	store *Store
-	peers map[string]p2p.Peer
-	mu    sync.Mutex
-	ctx   context.Context
+	store    *Store
+	peers    map[string]p2p.Peer
+	mu       sync.Mutex
+	QuitChan chan struct{}
+	ctx      context.Context
 }
 
 func (f *FileServer) SaveData(id, key string, r io.Reader) error {
@@ -87,9 +88,10 @@ func NewFileServer(opts ServerOpts) *FileServer {
 	return &FileServer{
 		ServerOpts: opts,
 		store:      NewStore(op),
-		peers:      make(map[string]p2p.Peer),
+		peers:      make(map[string]p2p.Peer), // string reperesents peer address.
 		mu:         sync.Mutex{},
 		ctx:        context.Background(),
+		QuitChan:   make(chan struct{}),
 	}
 }
 
@@ -102,6 +104,7 @@ func (f *FileServer) Get(id, key string) (io.Reader, error) {
 	return nil, errors.New("not found")
 }
 
+// Stop closes conn with all peers and closes transport.
 func (f *FileServer) Stop() {
 	f.mu.Lock()
 	for _, v := range f.peers {
@@ -137,23 +140,25 @@ func (fs *FileServer) broadcast(msg *Payload) error {
 
 func (f *FileServer) readLoop(ctx context.Context) {
 	defer func() {
-		log.Printf("Closing server on %s", f.Transport.Addr())
-		f.Transport.Close()
-		f.Stop()
+		log.Printf("Closing server on %s", f.ListenAddr)
 	}()
 	for {
 		select {
 		case msg := <-f.Transport.Consume(): // read from transpot msg chan
 
-			fmt.Printf(" MSG: %v\n", string(msg.Payload))
 			var p Payload
 			if err := gob.NewDecoder(bytes.NewReader(msg.Payload)).Decode(&p); err != nil {
+
 				//				panic(err)
 			}
 
+			fmt.Printf(" MSG: %+v\n", string(p.Data))
+
 		case <-ctx.Done():
 			fmt.Println("Shutting down ...")
+
 			f.Stop()
+			f.QuitChan <- struct{}{}
 			return
 
 		}
@@ -168,6 +173,6 @@ func (f *FileServer) Start(ctx context.Context) {
 
 	f.bootsrapNodes()
 
-	f.readLoop(ctx)
+	go f.readLoop(ctx)
 
 }
