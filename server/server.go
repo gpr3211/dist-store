@@ -169,7 +169,7 @@ func (f *FileServer) Start(ctx context.Context) {
 	if err := f.Transport.ListenAndAccept(); err != nil {
 		panic(err)
 	}
-	LoadConfig()
+	//	LoadConfig()
 
 	f.bootsrapNodes()
 

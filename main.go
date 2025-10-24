@@ -16,13 +16,13 @@ import (
 type Config struct {
 	addr    string
 	FServer *server.FileServer
-	secret  []byte
+	// secret  []byte
 }
 
 func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 	tcpOpts := p2p.TCPTransportOpts{
 		ListenAddr:    addr,
-		HandshakeFunc: p2p.HybridHandshake, // rsa for  key exchange and aes for data encryption.
+		HandshakeFunc: p2p.HybridHandshake, // initial handshake acts as a wrapper around net.Conn for data encryption in transition. Uses RSA for  key exchange and AES for data encryption.
 		Decoder:       &p2p.DefaultDecoder{},
 	}
 
@@ -42,7 +42,7 @@ func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 //TODO:
 //
 //
-// - add logger
+// - add slogger
 
 func main() {
 	s := makeServ(":3000", "s1")           // port,root dir
@@ -61,9 +61,12 @@ func main() {
 	time.Sleep(time.Second * 2)
 	go cfg2.FServer.Start(ctx)
 
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 3) // give time to start and establish conn.
 
 	cfg.FServer.SaveData("user-test", "data", bytes.NewReader([]byte("test string"))) // save and broadcast data
+
+	time.Sleep(time.Second * 2)
+	cfg2.FServer.SaveData("user-test2", "data2", bytes.NewReader([]byte("test string2"))) // save and broadcast data
 
 	<-ctx.Done() // block
 
