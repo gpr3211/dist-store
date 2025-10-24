@@ -26,6 +26,9 @@ func (p PathKey) SetHash() {
 
 }
 
+type Store struct {
+	StoreOpts
+}
 type PathTransformFunc func(string, string) PathKey
 
 // DefaultPathTransformFunc creates path: /id/data
@@ -34,10 +37,6 @@ var DefaultPathTransformFunc = func(id, key string) PathKey {
 	return PathKey{
 		ID:       id,
 		Filename: key}
-}
-
-type Store struct {
-	StoreOpts
 }
 
 func (s *Store) Delete(id, key string) error {

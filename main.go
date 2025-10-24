@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -45,8 +48,8 @@ func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 // - add slogger
 
 func main() {
-	s := makeServ(":3000", "s1")           // port,root dir
-	s2 := makeServ(":4000", "s2", ":3000") // + bootstrap variadic string.
+	s := makeServ(":3000", "s1")  // port,root dir
+	s2 := makeServ(":4000", "s2") // + bootstrap variadic string.
 
 	cfg := &Config{
 		FServer: s,
@@ -68,6 +71,73 @@ func main() {
 	time.Sleep(time.Second * 2)
 	cfg2.FServer.SaveData("user-test2", "data2", bytes.NewReader([]byte("test string2"))) // save and broadcast data
 
+	fmt.Printf("\n╔════════════════════════════════════════╗\n")
+	fmt.Printf("║  Distributed File Storage System      ║\n")
+	fmt.Printf("║  Listening on: %-23s ║\n")
+	fmt.Printf("╚════════════════════════════════════════╝\n\n")
+
+	printHelp()
+	scanner := bufio.NewScanner(os.Stdin)
+
+	fmt.Print("> ") // print initially
+
+	for {
+		if !scanner.Scan() {
+			break
+		}
+
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			fmt.Print("> ")
+			continue
+		}
+
+		parts := strings.Fields(line)
+		cmd := parts[0]
+
+		switch cmd {
+		case "store":
+			// your code...
+		case "storefile":
+			// your code...
+		case "get":
+		case "delete":
+			if len(parts) < 2 {
+				fmt.Println("Usage: delete <id> <key>")
+			}
+		case "has":
+			if len(parts) < 2 {
+				fmt.Println("Usage: has <key>")
+			}
+		case "peers":
+		case "connect":
+			if len(parts) < 2 {
+				fmt.Println("Usage: connect <address>")
+				fmt.Print("> ")
+				continue
+			}
+			addr := parts[1]
+			fmt.Printf("Attempting to connect to %s...\n", addr)
+			if err := cfg.FServer.Transport.Dial(addr); err != nil {
+				fmt.Printf("Error connecting: %v\n", err)
+			} else {
+				time.Sleep(500 * time.Millisecond)
+				fmt.Printf("✓ Connected to %s\n", addr)
+			}
+
+		case "help":
+			printHelp()
+
+		case "exit", "quit":
+			return // or break out cleanly
+
+		default:
+			fmt.Printf("Unknown command: %s (type 'help' for commands)\n", cmd)
+		}
+
+		fmt.Print("> ") // ✅ print prompt after each command
+	}
+
 	<-ctx.Done() // block
 
 	stop()
@@ -82,5 +152,18 @@ func main() {
 		os.Exit(1)
 
 	}
+}
+
+func printHelp() {
+	fmt.Println("Commands:")
+	fmt.Println("  store <key> <content>       - Store text content with a key")
+	fmt.Println("  storefile <key> <filepath>  - Store a file with a key")
+	fmt.Println("  get <key>                   - Retrieve and display content")
+	fmt.Println("  delete <key>                - Delete local copy of file")
+	fmt.Println("  has <key>                   - Check if file exists locally")
+	fmt.Println("  connect <address>           - Manually connect to a peer")
+	fmt.Println("  peers                       - List connected peers")
+	fmt.Println("  help                        - Show this help")
+	fmt.Println("  exit/quit                   - Exit the program")
 
 }
