@@ -60,7 +60,8 @@ func main() {
 
 	time.Sleep(time.Second * 2)
 	go cfg2.FServer.Start(ctx)
-	time.Sleep(time.Second * 2)
+
+	time.Sleep(time.Second * 3)
 
 	cfg.FServer.SaveData("user-test", "data", bytes.NewReader([]byte("test string"))) // save and broadcast data
 

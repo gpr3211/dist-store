@@ -183,7 +183,7 @@ func hybridHandshakeInternal(conn net.Conn, outbound bool) (*HybridSecureConn, e
 		h.nonce = binary.BigEndian.Uint64(ctrBytes[:])
 	}
 
-	//	log.Printf("hybrid handshake OK remote=%s", conn.RemoteAddr())
+	log.Printf("hybrid handshake OK remote=%s", conn.RemoteAddr())
 	return h, nil
 }
 

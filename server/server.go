@@ -140,7 +140,7 @@ func (fs *FileServer) broadcast(msg *Payload) error {
 
 func (f *FileServer) readLoop(ctx context.Context) {
 	defer func() {
-		log.Printf("Closing server on %s", f.ListenAddr)
+		log.Printf("Closing server on %s", f.Transport.Addr())
 	}()
 	for {
 		select {
