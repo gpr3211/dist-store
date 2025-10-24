@@ -90,9 +90,8 @@ func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 
 	}()
 
-	if err := t.Config.HandshakeFunc(peer); err != nil {
-		return
-
+	if c, err := t.Config.HandshakeFunc(peer); err != nil {
+		peer.Conn = c
 	}
 	if t.Config.OnPeer != nil {
 		if err = t.Config.OnPeer(peer); err != nil {

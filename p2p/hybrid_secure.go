@@ -206,12 +206,9 @@ func HybridHandshake(conn Peer) (net.Conn, error) {
 	}
 
 	h, err := hybridHandshakeInternal(rawConn, outbound)
-
 	rawConn.SetDeadline(time.Time{}) // remove deadline after handshake is done
-	if err != nil {
-		return nil, err
-	}
-	return h, nil
+
+	return h, err
 }
 
 // Write encrypts and sends framed [len][nonce||ciphertext]

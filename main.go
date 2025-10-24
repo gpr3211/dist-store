@@ -22,7 +22,7 @@ type Config struct {
 func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 	tcpOpts := p2p.TCPTransportOpts{
 		ListenAddr:    addr,
-		HandshakeFunc: p2p.NOPHandshakefunc,
+		HandshakeFunc: p2p.HybridHandshake,
 		Decoder:       &p2p.DefaultDecoder{},
 	}
 
