@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -31,7 +32,7 @@ type FileServer struct {
 	store *Store
 	peers map[string]p2p.Peer
 	mu    sync.Mutex
-	qChan chan struct{}
+	ctx   context.Context
 }
 
 func (f *FileServer) SaveData(id, key string, r io.Reader) error {
@@ -86,9 +87,9 @@ func NewFileServer(opts ServerOpts) *FileServer {
 	return &FileServer{
 		ServerOpts: opts,
 		store:      NewStore(op),
-		qChan:      make(chan struct{}),
 		peers:      make(map[string]p2p.Peer),
 		mu:         sync.Mutex{},
+		ctx:        context.Background(),
 	}
 }
 
@@ -106,9 +107,9 @@ func (f *FileServer) Stop() {
 	for _, v := range f.peers {
 		v.Close()
 	}
+	f.Transport.Close()
 
 	f.mu.Unlock()
-	close(f.qChan)
 
 }
 
@@ -134,37 +135,39 @@ func (fs *FileServer) broadcast(msg *Payload) error {
 	return gob.NewEncoder(mw).Encode(msg)
 }
 
-func (f *FileServer) readLoop() {
+func (f *FileServer) readLoop(ctx context.Context) {
 	defer func() {
-		log.Printf("Closing server on %s", f.ListenAddr)
+		log.Printf("Closing server on %s", f.Transport.Addr())
 		f.Transport.Close()
 		f.Stop()
 	}()
 	for {
 		select {
 		case msg := <-f.Transport.Consume(): // read from transpot msg chan
-			fmt.Println("got msg")
+
+			fmt.Printf(" MSG: %v\n", string(msg.Payload))
 			var p Payload
 			if err := gob.NewDecoder(bytes.NewReader(msg.Payload)).Decode(&p); err != nil {
 				//				panic(err)
 			}
-			fmt.Printf("%v", p)
 
-		case <-f.qChan:
+		case <-ctx.Done():
+			fmt.Println("Shutting down ...")
+			f.Stop()
 			return
 
 		}
 	}
 }
 
-func (f *FileServer) Start() error {
+func (f *FileServer) Start(ctx context.Context) {
 	if err := f.Transport.ListenAndAccept(); err != nil {
-		return err
+		panic(err)
 	}
 	LoadConfig()
 
 	f.bootsrapNodes()
-	f.readLoop()
 
-	return nil
+	f.readLoop(ctx)
+
 }

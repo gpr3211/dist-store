@@ -2,7 +2,11 @@ package main
 
 import (
 	"bytes"
-	"log"
+	"context"
+	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gpr3211/dist-store/p2p"
@@ -45,25 +49,35 @@ func main() {
 	}
 	cfg2 := &Config{FServer: s2}
 
-	go func() {
-		err := cfg.FServer.Start()
-		if err != nil {
-			log.Fatalln("Failed to start server")
-		}
-	}()
-	time.Sleep(time.Millisecond * 100)
-	go func() {
-		err := cfg2.FServer.Start()
-		if err != nil {
-			log.Fatalln("Failed to start server")
-		}
-	}()
-	time.Sleep(time.Second)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	done := make(chan bool)
+
+	go cfg.FServer.Start(ctx)
+
+	time.Sleep(time.Second / 2)
+	go cfg2.FServer.Start(ctx)
+	time.Sleep(time.Second * 2)
+
 	cfg.FServer.SaveData("user-test", "data", bytes.NewReader([]byte("test string")))
 
+	<-ctx.Done()
+
+	stop()
+
+	time.Sleep(time.Second)
+	forceQ := make(chan os.Signal, 1)
+	signal.Notify(forceQ, os.Interrupt, syscall.SIGTERM)
+	select {
+	case <-done:
+		slog.Info("Shutdown complete .")
+	case <-forceQ:
+		slog.Info("force quit")
+		os.Exit(1)
+
+	}
 	// Create a logger with the file handler
 
 	// Use the logger
 
-	select {}
 }

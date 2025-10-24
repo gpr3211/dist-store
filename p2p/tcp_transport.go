@@ -50,7 +50,7 @@ func (t *TCPTransport) startAcceptLoop() {
 	for {
 		conn, err := t.listener.Accept()
 		if err != nil {
-			fmt.Println("TCP accept err: ", err)
+			return
 		}
 		go t.handleConn(conn, false)
 
@@ -90,7 +90,6 @@ func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 
 	}()
 
-	// HANDLE !! TODO:
 	if err := t.Config.HandshakeFunc(peer); err != nil {
 		return
 
@@ -103,8 +102,6 @@ func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 	}
 	msg := RPC{}
 
-	// READLOOP
-
 	for {
 		err := t.Config.Decoder.Decode(conn, &msg)
 		if err == net.ErrClosed {
@@ -115,7 +112,6 @@ func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 			case io.EOF:
 				return
 			}
-			fmt.Printf("TCP ERR: %s\n", err)
 			continue
 		}
 
