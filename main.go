@@ -22,7 +22,7 @@ type Config struct {
 func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 	tcpOpts := p2p.TCPTransportOpts{
 		ListenAddr:    addr,
-		HandshakeFunc: p2p.HybridHandshake,
+		HandshakeFunc: p2p.HybridHandshake, // rsa for  key exchange and aes for data encryption.
 		Decoder:       &p2p.DefaultDecoder{},
 	}
 
@@ -39,10 +39,14 @@ func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 
 }
 
-func main() {
-	s := makeServ(":3000", "s1")
+//TODO:
+//
+//
+// - add logger
 
-	s2 := makeServ(":4000", "s2", ":3000")
+func main() {
+	s := makeServ(":3000", "s1")           // port,root dir
+	s2 := makeServ(":4000", "s2", ":3000") // + bootstrap variadic string.
 
 	cfg := &Config{
 		FServer: s,
@@ -59,13 +63,12 @@ func main() {
 	go cfg2.FServer.Start(ctx)
 	time.Sleep(time.Second * 2)
 
-	cfg.FServer.SaveData("user-test", "data", bytes.NewReader([]byte("test string")))
+	cfg.FServer.SaveData("user-test", "data", bytes.NewReader([]byte("test string"))) // save and broadcast data
 
-	<-ctx.Done()
+	<-ctx.Done() // block
 
 	stop()
 
-	time.Sleep(time.Second)
 	forceQ := make(chan os.Signal, 1)
 	signal.Notify(forceQ, os.Interrupt, syscall.SIGTERM)
 	select {
@@ -76,8 +79,5 @@ func main() {
 		os.Exit(1)
 
 	}
-	// Create a logger with the file handler
-
-	// Use the logger
 
 }
