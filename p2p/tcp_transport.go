@@ -70,9 +70,7 @@ func (t *TCPTransport) Dial(adr string) error {
 	return nil
 }
 func (t *TCPTransport) Addr() string {
-
 	return t.Config.ListenAddr
-
 }
 
 func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
@@ -89,16 +87,21 @@ func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 		conn.Close()
 	}()
 
-	if c, err := t.Config.HandshakeFunc(peer); err != nil {
-		peer.Conn = c
+	if _, err := t.Config.HandshakeFunc(peer); err != nil {
+		//		peer.Conn = c
+
+		log.Printf("closing conn due to error %s: ", err.Error())
+		return
 	}
 	if t.Config.OnPeer != nil {
 		if err = t.Config.OnPeer(peer); err != nil {
+			log.Printf("closing conn due to error %s: ", err.Error())
+			//			t.Close()
 			return
-
 		}
 	}
 	msg := RPC{}
+	//read loop
 
 	for {
 		err := t.Config.Decoder.Decode(conn, &msg)
@@ -113,8 +116,14 @@ func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 			continue
 		}
 
-		msg.From = conn.RemoteAddr()
-		//		fmt.Printf("%s: message: %+v\n", msg.From, string(msg.Payload))
+		msg.From = conn.RemoteAddr().String()
+		if msg.Stream {
+			peer.wg.Add(1)
+			fmt.Printf("[%s] incoming stream, waiting...\n", conn.RemoteAddr())
+			peer.wg.Wait()
+			fmt.Printf("[%s] stream closed, resuming read loop\n", conn.RemoteAddr())
+			continue
+		}
 		t.rpcChan <- msg
 	}
 }

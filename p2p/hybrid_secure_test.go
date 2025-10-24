@@ -131,7 +131,7 @@ func TestHybridSecureConn10MBFile(t *testing.T) {
 	var metaBuf bytes.Buffer
 	gob.NewEncoder(&metaBuf).Encode(metadata)
 	client.Write(metaBuf.Bytes())
-	time.Sleep(100 * time.Millisecond)
+	//	time.Sleep(100 * time.Millisecond)
 
 	chunkSize := 32 * 1024 // 32KB chunks
 

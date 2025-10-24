@@ -24,8 +24,13 @@ var _ Peer = (*TCPPeer)(nil)
 func (t TCPPeer) Close() error {
 	return t.Conn.Close()
 }
-func (t *TCPPeer) Send([]byte) error { return nil }
-func (t *TCPPeer) CloseStream()      {}
+func (t *TCPPeer) Send(b []byte) error {
+	_, err := t.Conn.Write(b)
+	return err
+}
+func (t *TCPPeer) CloseStream() {
+	t.wg.Done()
+}
 
 func NewTCPPeer(con net.Conn, out bool) *TCPPeer {
 

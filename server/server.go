@@ -6,11 +6,13 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"github.com/gpr3211/dist-store/p2p"
 	"io"
 	"log"
 	"log/slog"
 	"sync"
+	"time"
+
+	"github.com/gpr3211/dist-store/p2p"
 )
 
 type ServerOpts struct {
@@ -103,7 +105,44 @@ func (f *FileServer) Get(id, key string) (io.Reader, error) {
 	}
 	return nil, errors.New("not found")
 }
+func (f *FileServer) Stop() {
+	log.Println("Stopping server...")
 
+	// Close peers with timeout
+	f.mu.Lock()
+	peerList := make([]p2p.Peer, 0, len(f.peers))
+	for _, v := range f.peers {
+		peerList = append(peerList, v)
+	}
+	f.mu.Unlock()
+
+	// Close peers without holding the lock
+	for _, peer := range peerList {
+		go func(p p2p.Peer) {
+			// Use a timeout to prevent hanging
+			done := make(chan struct{})
+			go func() {
+				p.Close()
+				close(done)
+			}()
+			select {
+			case <-done:
+			case <-time.After(2 * time.Second):
+				log.Printf("Timeout closing peer %s", p.RemoteAddr())
+			}
+		}(peer)
+	}
+
+	// Give peers a moment to close
+	time.Sleep(500 * time.Millisecond)
+
+	// Close transport
+	if err := f.Transport.Close(); err != nil {
+		log.Printf("Error closing transport: %v", err)
+	}
+}
+
+/*
 // Stop closes conn with all peers and closes transport.
 func (f *FileServer) Stop() {
 	f.mu.Lock()
@@ -115,6 +154,7 @@ func (f *FileServer) Stop() {
 	f.mu.Unlock()
 
 }
+*/
 
 type Payload struct {
 	ID   string
@@ -135,12 +175,15 @@ func (fs *FileServer) broadcast(msg *Payload) error {
 		fmt.Println("added peer", " ", addr)
 	}
 	mw := io.MultiWriter(peers...)
-	return gob.NewEncoder(mw).Encode(msg)
+	//	return gob.NewEncoder(mw).Encode(msg)
+	_, err := mw.Write(buf.Bytes())
+	return err
 }
 
 func (f *FileServer) readLoop(ctx context.Context) {
 	defer func() {
 		log.Printf("Closing server on %s", f.Transport.Addr())
+		close(f.QuitChan)
 	}()
 	for {
 		select {
