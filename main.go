@@ -1,14 +1,14 @@
 package main
 
 import (
-	"bufio"
+	//	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
-	"strings"
+	//	"strings"
 	"syscall"
 	"time"
 
@@ -36,6 +36,7 @@ func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 		Nodes:             nodes,
 	}
 	serverOpts.StorageRoot = root
+	serverOpts.AutoSync = true
 	s := server.NewFileServer(serverOpts)
 	tr.Config.OnPeer = s.OnPeer
 	return s
@@ -63,79 +64,81 @@ func main() {
 
 	cfg.FServer.SaveData("user-test", "data", bytes.NewReader([]byte("test string"))) // save and broadcast data
 
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 1)
 	cfg2.FServer.SaveData("user-test2", "data2", bytes.NewReader([]byte("test string2"))) // save and broadcast data
 
-	fmt.Printf("\n╔═══════════════════════════════════════╗\n")
-	fmt.Printf("║  Distributed File Storage System      ║\n")
-	fmt.Printf("║  Listening on: %-23s ║\n", cfg.FServer.Transport.Addr())
-	fmt.Printf("╚═══════════════════════════════════════╝\n\n")
+	/*
+		fmt.Printf("\n╔═══════════════════════════════════════╗\n")
+		fmt.Printf("║  Distributed File Storage System      ║\n")
+		fmt.Printf("║  Listening on: %-23s ║\n", cfg.FServer.Transport.Addr())
+		fmt.Printf("╚═══════════════════════════════════════╝\n\n")
 
-	printHelp()
+		printHelp()
 
-	// Run the interactive loop in a goroutine
-	go func() {
-		scanner := bufio.NewScanner(os.Stdin)
-		fmt.Print("> ") // print initially
+		// Run the interactive loop in a goroutine
+		go func() {
+			scanner := bufio.NewScanner(os.Stdin)
+			fmt.Print("> ") // print initially
 
-		for {
-			if !scanner.Scan() {
-				break
-			}
-
-			line := strings.TrimSpace(scanner.Text())
-			if line == "" {
-				fmt.Print("> ")
-				continue
-			}
-
-			parts := strings.Fields(line)
-			cmd := parts[0]
-
-			switch cmd {
-			case "store":
-				// your code...
-			case "storefile":
-				// your code...
-			case "get":
-			case "delete":
-				if len(parts) < 2 {
-					fmt.Println("Usage: delete <id> <key>")
+			for {
+				if !scanner.Scan() {
+					break
 				}
-			case "has":
-				if len(parts) < 2 {
-					fmt.Println("Usage: has <key>")
-				}
-			case "peers":
-			case "connect":
-				if len(parts) < 2 {
-					fmt.Println("Usage: connect <address>")
+
+				line := strings.TrimSpace(scanner.Text())
+				if line == "" {
 					fmt.Print("> ")
 					continue
 				}
-				addr := parts[1]
-				fmt.Printf("Attempting to connect to %s...\n", addr)
-				if err := cfg.FServer.Transport.Dial(addr); err != nil {
-					fmt.Printf("Error connecting: %v\n", err)
-				} else {
-					time.Sleep(500 * time.Millisecond)
-					fmt.Printf("✓ Connected to %s\n", addr)
+
+				parts := strings.Fields(line)
+				cmd := parts[0]
+
+				switch cmd {
+				case "store":
+					// your code...
+				case "storefile":
+					// your code...
+				case "get":
+				case "delete":
+					if len(parts) < 2 {
+						fmt.Println("Usage: delete <id> <key>")
+					}
+				case "has":
+					if len(parts) < 2 {
+						fmt.Println("Usage: has <key>")
+					}
+				case "peers":
+				case "connect":
+					if len(parts) < 2 {
+						fmt.Println("Usage: connect <address>")
+						fmt.Print("> ")
+						continue
+					}
+					addr := parts[1]
+					fmt.Printf("Attempting to connect to %s...\n", addr)
+					if err := cfg.FServer.Transport.Dial(addr); err != nil {
+						fmt.Printf("Error connecting: %v\n", err)
+					} else {
+						time.Sleep(500 * time.Millisecond)
+						fmt.Printf("✓ Connected to %s\n", addr)
+					}
+
+				case "help":
+					printHelp()
+
+				case "exit", "quit":
+					stop() // Cancel the context to trigger shutdown
+					return
+
+				default:
+					fmt.Printf("Unknown command: %s (type 'help' for commands)\n", cmd)
 				}
 
-			case "help":
-				printHelp()
-
-			case "exit", "quit":
-				stop() // Cancel the context to trigger shutdown
-				return
-
-			default:
-				fmt.Printf("Unknown command: %s (type 'help' for commands)\n", cmd)
+				fmt.Print("> ")
 			}
-
-			fmt.Print("> ")
-		}
-	}()
+		}()
+	*/
 
 	// Wait for context cancellation
 	<-ctx.Done()
@@ -169,4 +172,3 @@ func printHelp() {
 	fmt.Println("  help                        - Show this help")
 	fmt.Println("  exit/quit                   - Exit the program")
 }
-

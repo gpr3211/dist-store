@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 )
 
@@ -74,7 +73,7 @@ func (s *Store) Read(id, key string) (io.Reader, error) {
 }
 
 // Write writes to disk.
-func (s *Store) Write(id, key string, r io.Reader) error {
+func (s *Store) Write(id, key string, r io.Reader) (int64, error) {
 	return s.writeStream(id, key, r)
 }
 
@@ -120,18 +119,14 @@ func (s *Store) OpenFileForWrite(id, key string) (*os.File, error) {
 	return f, nil
 }
 
-func (s *Store) writeStream(id, key string, r io.Reader) error {
+func (s *Store) writeStream(id, key string, r io.Reader) (int64, error) {
 	f, err := s.OpenFileForWrite(id, key)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer f.Close()
-	n, err := io.Copy(f, r)
-	if err != nil {
-		return err
-	}
-	log.Printf("Written (%d) bytes to disk", n)
-	return nil
+	return io.Copy(f, r)
+
 }
 
 func (s *Store) readStream(id, key string) (io.Reader, error) {

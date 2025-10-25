@@ -88,7 +88,6 @@ func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 	}()
 
 	if _, err := t.Config.HandshakeFunc(peer); err != nil {
-		//		peer.Conn = c
 
 		log.Printf("closing conn due to error %s: ", err.Error())
 		return
@@ -96,7 +95,6 @@ func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 	if t.Config.OnPeer != nil {
 		if err = t.Config.OnPeer(peer); err != nil {
 			log.Printf("closing conn due to error %s: ", err.Error())
-			//			t.Close()
 			return
 		}
 	}

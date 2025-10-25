@@ -12,21 +12,36 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gpr3211/dist-store/model"
 	"github.com/gpr3211/dist-store/p2p"
 )
 
+var ErrNotFound = errors.New("Not found")
+var ErrClosedConn = errors.New("closed conn")
+
+//TODO:
+//
+//
+//
+//
+
+// ServerOpts
+//
+//	-- ID(int)
+//	-- key([]byte) secret
 type ServerOpts struct {
 	configJson
-	ID                int    `mapstructure:"id"`
-	key               []byte `mapstructure:"key"`
-	PathTransformFunc PathTransformFunc
-	Transport         p2p.Transport
-	logger            *slog.Logger
+	ID                int               `mapstructure:"id"`  // unused
+	key               []byte            `mapstructure:"key"` // unused
+	PathTransformFunc PathTransformFunc // naming convetion for storing files. curr {root}{user}{}key
+	Transport         p2p.Transport     // transport type(ex p2p)
+	logger            *slog.Logger      //
 	Nodes             []string
 }
 type configJson struct {
 	ListenAddr  string `mapstructure:"addr"`
 	StorageRoot string `mapstructure:"root"`
+	AutoSync    bool   `mapstructure:"auto-sync"`
 }
 
 type FileServer struct {
@@ -41,23 +56,42 @@ type FileServer struct {
 func (f *FileServer) SaveData(id, key string, r io.Reader) error {
 
 	buf := new(bytes.Buffer)
-	tee := io.TeeReader(r, buf)
+	tee := io.TeeReader(r, buf) //
 
-	err := f.store.Write(id, key, tee)
+	n, err := f.store.Write(id, key, tee)
 	if err != nil {
 		return err
 	}
+	//TODO:
+	// add to flag or config.
+	if f.AutoSync {
 
-	_, err = io.Copy(buf, r)
-	if err != nil {
-		return err
+		// send metadata msg to peers.
+		msg := model.Message{
+			Payload: model.MessageStoreFile{
+				ID:   id,
+				Key:  key,
+				Size: n,
+			},
+		}
+		if err := f.broadcast(msg); err != nil {
+			return nil
+		}
+		time.Sleep(time.Millisecond * 100)
+
+		peers := []io.Writer{}
+		for _, peer := range f.peers {
+			peers = append(peers, peer)
+		}
+		mw := io.MultiWriter(peers...)
+		mw.Write([]byte{p2p.IncomingStream}) // warn client that stream of data is inc so they can lock the peer.
+		_, err := io.Copy(mw, buf)
+		if err != nil {
+			return err
+		}
+
 	}
-	p := &Payload{
-		ID:   id,
-		Key:  key,
-		Data: buf.Bytes(),
-	}
-	return f.broadcast(p)
+	return nil
 
 }
 
@@ -163,42 +197,41 @@ type Payload struct {
 }
 
 // broadcast send key file to all connected peers.
-func (fs *FileServer) broadcast(msg *Payload) error {
+func (fs *FileServer) broadcast(msg model.Message) error {
 	fmt.Println("broadcasting ... to ", len(fs.peers))
 	buf := new(bytes.Buffer)
 	if err := gob.NewEncoder(buf).Encode(msg); err != nil {
 		return err
 	}
-	peers := []io.Writer{}
 	for addr, peer := range fs.peers {
-		peers = append(peers, peer)
 		fmt.Println("added peer", " ", addr)
+		peer.Send([]byte{p2p.IncomingMessage})
+		if err := peer.Send(buf.Bytes()); err != nil {
+			return err
+		}
 	}
-	mw := io.MultiWriter(peers...)
-	//	return gob.NewEncoder(mw).Encode(msg)
-	_, err := mw.Write(buf.Bytes())
-	return err
+	return nil
 }
 
 func (f *FileServer) readLoop(ctx context.Context) {
 	defer func() {
-		log.Printf("Closing server on %s", f.Transport.Addr())
 		close(f.QuitChan)
 	}()
 	for {
 		select {
 		case msg := <-f.Transport.Consume(): // read from transpot msg chan
+			fmt.Println("got msg")
 
-			var p Payload
+			var p model.Message
 			if err := gob.NewDecoder(bytes.NewReader(msg.Payload)).Decode(&p); err != nil {
-
-				//				panic(err)
+				log.Println("decoding error")
+			}
+			err := f.handleMessage(msg.From, &p)
+			if err != nil {
+				log.Println("handleMessage rror", err)
 			}
 
-			fmt.Printf(" MSG: %+v\n", string(p.Data))
-
 		case <-ctx.Done():
-			fmt.Println("Shutting down ...")
 
 			f.Stop()
 			f.QuitChan <- struct{}{}
@@ -206,6 +239,33 @@ func (f *FileServer) readLoop(ctx context.Context) {
 
 		}
 	}
+}
+
+// handleMessagehan
+func (f *FileServer) handleMessage(from string, msg *model.Message) error {
+	switch v := msg.Payload.(type) {
+	case model.MessageStoreFile:
+		return f.handleMessageStoreFile(from, v)
+	}
+
+	return nil
+}
+
+func (f *FileServer) handleMessageStoreFile(from string, data model.MessageStoreFile) error {
+	peer, ok := f.peers[from]
+	if !ok {
+		return ErrNotFound
+	}
+	n, err := f.store.Write(data.ID, data.Key, io.LimitReader(peer, data.Size))
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Written (%d) bytes to disk", n)
+	peer.CloseStream()
+
+	return nil
+
 }
 
 func (f *FileServer) Start(ctx context.Context) {

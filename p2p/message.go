@@ -1,9 +1,18 @@
 package p2p
 
 const (
-	IncomingMessage  = 0x1
-	IncomingStream   = 0x2
-	HandshakeMessage = 0x3
+	// Message types (0x01-0x0F)
+	IncomingMessage = 0x01 + iota
+	IncomingStream
+	IncomingVideoStream
+	IncomingAudioStream
+)
+
+const (
+	// Control messages (0xF0-0xFE)
+	ControlPing = 0xF0 + iota
+	ControlAck
+	ControlClose
 )
 
 // RPC holds any arbirtrary data being sent over each transport b/w two nodes.
