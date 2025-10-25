@@ -33,7 +33,7 @@ func TestStorage(t *testing.T) {
 	data := []byte("some bytess")
 	key := "Moe's Specials"
 	id := "user-test-storage"
-	err := s.writeStream(id, key, bytes.NewReader(data))
+	_, err := s.writeStream(id, key, bytes.NewReader(data))
 	if err != nil {
 		t.Error(err)
 	}
@@ -68,7 +68,7 @@ func TestDirectoryTraversal(t *testing.T) {
 
 	// user1 writes.
 	user1Data := []byte("user1's secret data")
-	err := s.Write(user1, "secrets", bytes.NewReader(user1Data))
+	_, err := s.Write(user1, "secrets", bytes.NewReader(user1Data))
 	if err != nil {
 		t.Fatalf("Failed to write user1 data: %v", err)
 	}
@@ -113,7 +113,7 @@ func TestStoreDelete(t *testing.T) {
 	key := "ss"
 	id := "user-test-delete"
 	data := []byte{1, 2, 3}
-	if err := s.writeStream(id, key, bytes.NewReader(data)); err != nil {
+	if _, err := s.writeStream(id, key, bytes.NewReader(data)); err != nil {
 		t.Error(err)
 	}
 	if err := s.Delete(id, key); err != nil {
