@@ -70,7 +70,7 @@ func main() {
 
 	time.Sleep(time.Second * 3) // give time to start and establish conn.
 
-	cfg.FServer.SaveData("user-test", "data", bytes.NewReader([]byte("test string"))) // save and broadcast data
+	cfg.FServer.SaveData("user-test", "string.txt", bytes.NewReader([]byte("test string"))) // save and broadcast data
 
 	time.Sleep(time.Second * 1)
 	bigData := make([]byte, 10*1024*1024)

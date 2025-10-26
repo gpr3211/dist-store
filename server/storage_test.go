@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"testing"
+
+	"github.com/gpr3211/dist-store/assert"
 )
 
 func newStore() *Store {
@@ -87,7 +89,46 @@ func TestDirectoryTraversal(t *testing.T) {
 	}
 }
 
-// TODO: fix
+func TestGetUserKeys(t *testing.T) {
+	opts := StoreOpts{PathTransformFunc: DefaultPathTransformFunc}
+
+	store := NewStore(opts)
+	defer teardown(t, store)
+
+	data := []byte("some bytess")
+
+	key := "Moe's Specials"
+	key2 := "moe's 2"
+	key3 := "moe's 3"
+
+	expected := []string{key, key2, key3}
+	expected2 := []string{key3}
+
+	id := "user-test-storage"
+	id2 := "user-test-storage2"
+	store.Write(id, key, bytes.NewReader(data))
+
+	store.Write(id, key2, bytes.NewReader(data))
+
+	store.Write(id, key3, bytes.NewReader(data))
+
+	store.Write(id2, key3, bytes.NewReader(data))
+
+	items, err := store.GetUserKeys(id)
+	if err != nil {
+		t.Error("failed to get user keys", err)
+	}
+	for i, v := range items {
+		assert.Equal(t, v, expected[i])
+	}
+	t2, err := store.GetUserKeys(id2)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, t2, expected2)
+
+}
+
 func TestPathTransform(t *testing.T) {
 	key := "best-pics.jpg"
 	id := "user-test"

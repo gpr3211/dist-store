@@ -165,7 +165,7 @@ func (f *FileServer) Stop() {
 			case <-done:
 			case <-time.After(2 * time.Second):
 
-				f.Logger.Warn("Timeout closing peer ...", p.RemoteAddr().String())
+				f.Logger.Warn("Timeout closing peer ...", p.RemoteAddr().String(), nil)
 
 			}
 		}(peer)

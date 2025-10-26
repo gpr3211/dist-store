@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 )
 
@@ -50,6 +51,20 @@ func (s *Store) Clear() error {
 	return os.RemoveAll(s.Root)
 }
 
+func (s *Store) GetUserKeys(id string) ([]string, error) {
+
+	list := []string{}
+	ls := s.dir.FS()
+	l, err := fs.ReadDir(ls, id)
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range l {
+		list = append(list, v.Name())
+	}
+	return list, nil
+}
+
 // Has checks if the store contains a key.
 // - returns true if found.
 func (s *Store) Has(id, key string) bool {
@@ -69,7 +84,9 @@ func (s *Store) Read(id, key string) (io.Reader, error) {
 	return buf, err
 }
 
-// Write writes to disk.
+// Write saves a file to disk.
+//
+// -- will currently overwrite keys.
 func (s *Store) Write(id, key string, r io.Reader) (int64, error) {
 	return s.writeStream(id, key, r)
 }
