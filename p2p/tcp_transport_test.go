@@ -3,7 +3,7 @@ package p2p
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/gpr3211/dist-store/assert"
 )
 
 func TestTCPTransport(t *testing.T) {

@@ -27,6 +27,7 @@ func (p PathKey) SetHash() {
 
 type Store struct {
 	StoreOpts
+	dir *os.Root
 }
 type PathTransformFunc func(string, string) PathKey
 
@@ -40,11 +41,7 @@ var DefaultPathTransformFunc = func(id, key string) PathKey {
 
 func (s *Store) Delete(id, key string) error {
 	pkey := s.PathTransformFunc(id, key)
-	f, err := os.OpenRoot(s.Root)
-	if err != nil {
-		return err
-	}
-	return f.Remove(pkey.Fullpath())
+	return s.dir.Remove(pkey.Fullpath())
 
 }
 
@@ -92,11 +89,29 @@ func NewStore(opts StoreOpts) *Store {
 	if len(opts.Root) == 0 {
 		opts.Root = defaultRootFolder
 	}
-	return &Store{
+	s := &Store{
 		StoreOpts: opts,
 	}
+	f, err := HandleRootDir(s.Root)
+	if err != nil {
+		panic(err)
+	}
+
+	s.dir = f
+	return s
 }
 
+func HandleRootDir(s string) (*os.Root, error) {
+	info, err := os.Stat(s)
+	if errors.Is(err, os.ErrNotExist) {
+		if err := os.MkdirAll(s, os.ModePerm); err != nil {
+			return nil, err
+		}
+	} else if info.IsDir() {
+		return os.OpenRoot(s)
+	}
+	return os.OpenRoot(s)
+}
 func (s *Store) OpenFileForWrite(id, key string) (*os.File, error) {
 	pathkey := s.PathTransformFunc(id, key)
 	// Create full directory structure: root/user_id/item_name
@@ -107,12 +122,8 @@ func (s *Store) OpenFileForWrite(id, key string) (*os.File, error) {
 			return nil, err
 		}
 	}
-	root, err := os.OpenRoot(s.Root)
-	if err != nil {
-		return nil, err
-	}
 	pathandFilename := pathkey.Fullpath()
-	f, err := root.OpenFile(pathandFilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	f, err := s.dir.OpenFile(pathandFilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
 		return nil, err
 	}
@@ -126,15 +137,10 @@ func (s *Store) writeStream(id, key string, r io.Reader) (int64, error) {
 	}
 	defer f.Close()
 	return io.Copy(f, r)
-
 }
 
 func (s *Store) readStream(id, key string) (io.Reader, error) {
 	pKey := s.PathTransformFunc(id, key)
 	fullPath := pKey.Fullpath()
-	root, err := os.OpenRoot(s.Root)
-	if err != nil {
-		return nil, err
-	}
-	return root.Open(fullPath)
+	return s.dir.Open(fullPath)
 }

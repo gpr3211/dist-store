@@ -1,14 +1,14 @@
 package main
 
 import (
-	//	"bufio"
 	"bytes"
 	"context"
+	"crypto/rand"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
-	//	"strings"
 	"syscall"
 	"time"
 
@@ -65,7 +65,12 @@ func main() {
 	cfg.FServer.SaveData("user-test", "data", bytes.NewReader([]byte("test string"))) // save and broadcast data
 
 	time.Sleep(time.Second * 1)
-	cfg2.FServer.SaveData("user-test2", "data2", bytes.NewReader([]byte("test string2"))) // save and broadcast data
+	bigData := make([]byte, 10*1024*1024)
+	if _, err := io.ReadFull(rand.Reader, bigData); err != nil {
+		panic(err)
+	}
+
+	cfg2.FServer.SaveData("user-test2", "data2", bytes.NewReader(bigData)) // save and broadcast data
 
 	/*
 		fmt.Printf("\n╔═══════════════════════════════════════╗\n")
