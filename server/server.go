@@ -33,8 +33,8 @@ type ServerOpts struct {
 	configJson
 	ID                int               `mapstructure:"id"`  // unused
 	key               []byte            `mapstructure:"key"` // unused
-	PathTransformFunc PathTransformFunc // naming convetion for storing files. curr {root}{user}{}key
-	Transport         p2p.Transport     // transport type(ex p2p)
+	PathTransformFunc PathTransformFunc // naming convetion for storing files. curr {root}{user}{key}
+	Transport         p2p.Transport     // transport type(ex. p2p)
 	Logger            *slog.Logger      //
 	Nodes             []string
 }
@@ -53,6 +53,15 @@ type FileServer struct {
 	ctx      context.Context
 }
 
+//TODO:
+// - overwrite/append
+// - permissions
+// - on disk encryption
+// -
+
+// SaveData saves data to disk.
+//
+//	--form {root/user/key}
 func (f *FileServer) SaveData(id, key string, r io.Reader) error {
 
 	buf := new(bytes.Buffer)
