@@ -37,6 +37,8 @@ func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 	}
 	serverOpts.StorageRoot = root
 	serverOpts.AutoSync = true
+
+	serverOpts.Logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	s := server.NewFileServer(serverOpts)
 	tr.Config.OnPeer = s.OnPeer
 	return s

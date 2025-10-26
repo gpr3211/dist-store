@@ -35,7 +35,7 @@ type ServerOpts struct {
 	key               []byte            `mapstructure:"key"` // unused
 	PathTransformFunc PathTransformFunc // naming convetion for storing files. curr {root}{user}{}key
 	Transport         p2p.Transport     // transport type(ex p2p)
-	logger            *slog.Logger      //
+	Logger            *slog.Logger      //
 	Nodes             []string
 }
 type configJson struct {
@@ -103,7 +103,7 @@ func (fs *FileServer) bootsrapNodes() error {
 
 		go func(addr string) {
 			if err := fs.Transport.Dial(addr); err != nil {
-				log.Println("dial error: ", err)
+				fs.Logger.Warn("Dial Error", err.Error(), err)
 			}
 		}(addr)
 	}
@@ -116,11 +116,13 @@ func (fs *FileServer) OnPeer(p p2p.Peer) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 	fs.peers[p.RemoteAddr().String()] = p
-	log.Printf("Accepted conn from %s", p.RemoteAddr())
+	fs.Logger.Info("Accepted conn from ", p.RemoteAddr().String(), nil)
 	return nil
 }
 func NewFileServer(opts ServerOpts) *FileServer {
+
 	op := StoreOpts{Root: opts.StorageRoot, PathTransformFunc: opts.PathTransformFunc}
+
 	return &FileServer{
 		ServerOpts: opts,
 		store:      NewStore(op),
@@ -140,7 +142,7 @@ func (f *FileServer) Get(id, key string) (io.Reader, error) {
 	return nil, errors.New("not found")
 }
 func (f *FileServer) Stop() {
-	log.Println("Stopping server...")
+	f.Logger.Info("Server Stop called")
 
 	// Close peers with timeout
 	f.mu.Lock()
@@ -162,7 +164,9 @@ func (f *FileServer) Stop() {
 			select {
 			case <-done:
 			case <-time.After(2 * time.Second):
-				log.Printf("Timeout closing peer %s", p.RemoteAddr())
+
+				f.Logger.Warn("Timeout closing peer ...", p.RemoteAddr().String())
+
 			}
 		}(peer)
 	}
@@ -172,7 +176,8 @@ func (f *FileServer) Stop() {
 
 	// Close transport
 	if err := f.Transport.Close(); err != nil {
-		log.Printf("Error closing transport: %v", err)
+		f.Logger.Warn(err.Error())
+		panic(err)
 	}
 }
 
