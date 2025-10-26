@@ -20,9 +20,11 @@ var ErrNotFound = errors.New("Not found")
 var ErrClosedConn = errors.New("closed conn")
 
 //TODO:
-//
-//
-//
+// -- Read permissions
+// -- file transfer progress tracker
+// -- id/dir/key support (see store)
+// -- logging
+// --
 //
 
 // ServerOpts
@@ -212,7 +214,7 @@ type Payload struct {
 
 // broadcast send key file to all connected peers.
 func (fs *FileServer) broadcast(msg model.Message) error {
-	fmt.Println("broadcasting ... to ", len(fs.peers))
+	fs.Logger.Info("broadcasting ... to %d ", string(len(fs.peers)), nil)
 	buf := new(bytes.Buffer)
 	if err := gob.NewEncoder(buf).Encode(msg); err != nil {
 		return err

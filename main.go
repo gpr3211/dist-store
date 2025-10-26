@@ -52,8 +52,32 @@ func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 }
 
 func main() {
-	s := makeServ(":3000", "s1")           // port,root dir
-	s2 := makeServ(":4000", "s2", ":3000") // + bootstrap variadic string.
+
+	localIP, err := server.GetLocalIP()
+	if err != nil {
+		fmt.Println("Error getting local IP:", err)
+		return
+	}
+	fmt.Println("Your local IP:", localIP)
+
+	activeHosts, err := server.ScanNetwork(time.Second * 5)
+	if err != nil {
+		fmt.Println("Error scanning network:", err)
+		return
+	}
+
+	fmt.Printf("\nFound %d active host(s):\n", len(activeHosts))
+	for i, host := range activeHosts {
+		activeHosts[i] = host + ":3000"
+		fmt.Printf("  - %s", activeHosts[i])
+		if host == localIP {
+			fmt.Print(" (this device)")
+		}
+		fmt.Println()
+	}
+
+	s := makeServ(":3000", "s1")                  // port,root dir
+	s2 := makeServ(":4000", "s2", activeHosts...) // + bootstrap variadic string.
 
 	cfg := &Config{
 		FServer: s,

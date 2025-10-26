@@ -9,6 +9,11 @@ import (
 	"os"
 )
 
+//TODO:
+// - overwrite/new on sender
+// - user/dir/key support
+// - file permission
+
 type PathKey struct {
 	ID       string
 	Filename string

@@ -5,6 +5,14 @@ import (
 	"net"
 )
 
+type Transport interface {
+	ListenAndAccept() error
+	Addr() string
+	Consume() <-chan RPC
+	Close() error
+	Dial(string) error
+}
+
 // Peer represents remote node.
 type Peer interface {
 	net.Conn
@@ -18,12 +26,4 @@ type Peer interface {
 type Sec interface {
 	PublicKey() rsa.PublicKey
 	PrivateKey() rsa.PrivateKey
-}
-
-type Transport interface {
-	ListenAndAccept() error
-	Addr() string
-	Consume() <-chan RPC
-	Close() error
-	Dial(string) error
 }
