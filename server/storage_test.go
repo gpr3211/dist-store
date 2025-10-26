@@ -114,14 +114,14 @@ func TestGetUserKeys(t *testing.T) {
 
 	store.Write(id2, key3, bytes.NewReader(data))
 
-	items, err := store.GetUserKeys(id)
+	items, err := store.GetKeys(id)
 	if err != nil {
 		t.Error("failed to get user keys", err)
 	}
 	for i, v := range items {
 		assert.Equal(t, v, expected[i])
 	}
-	t2, err := store.GetUserKeys(id2)
+	t2, err := store.GetKeys(id2)
 	if err != nil {
 		t.Error(err)
 	}

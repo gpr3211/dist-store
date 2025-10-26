@@ -51,10 +51,10 @@ func (s *Store) Clear() error {
 	return os.RemoveAll(s.Root)
 }
 
-func (s *Store) GetUserKeys(id string) ([]string, error) {
+func (s *Store) GetKeys(id string) ([]string, error) {
 
 	list := []string{}
-	ls := s.dir.FS()
+	ls := s.dir.FS() //  convert to FS in order to use ReadDir, os.Root doesnt implement it.
 	l, err := fs.ReadDir(ls, id)
 	if err != nil {
 		return nil, err
