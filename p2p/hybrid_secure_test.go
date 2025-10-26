@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/gpr3211/dist-store/model"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+
+	"github.com/gpr3211/dist-store/assert"
 )
 
 func TestHybridHandshake(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer listener.Close()
 
 	var server, client net.Conn
@@ -30,21 +30,21 @@ func TestHybridHandshake(t *testing.T) {
 
 	// Client side
 	conn, err := net.Dial("tcp", listener.Addr().String())
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	peer := NewTCPPeer(conn, true)
 	client, err = HybridHandshake(peer)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	<-done
 
 	// Test basic communication
 	testMsg := []byte("Hello, Hybrid Encryption!")
 
 	_, err = client.Write(testMsg)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	buf := make([]byte, 1024)
 	n, err := server.Read(buf)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, testMsg, buf[:n])
 
 	client.Close()
@@ -53,7 +53,7 @@ func TestHybridHandshake(t *testing.T) {
 
 func TestHybridSecureConn10MBFile(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer listener.Close()
 
 	var server, client net.Conn
@@ -67,10 +67,10 @@ func TestHybridSecureConn10MBFile(t *testing.T) {
 	}()
 
 	conn, err := net.Dial("tcp", listener.Addr().String())
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	peer := NewTCPPeer(conn, true)
 	client, err = HybridHandshake(peer)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	<-done
 
 	// Create 10MB file
@@ -169,7 +169,7 @@ func TestHybridSecureConn10MBFile(t *testing.T) {
 	}
 
 	// Verify
-	require.Equal(t, fileSize, len(receivedData))
+	assert.Equal(t, fileSize, len(receivedData))
 	assert.Equal(t, fileData, receivedData)
 
 	throughput := float64(fileSize) / duration.Seconds() / (1024 * 1024)
@@ -181,7 +181,7 @@ func TestHybridSecureConn10MBFile(t *testing.T) {
 
 func TestHybridSecureConnMultipleMessages(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer listener.Close()
 
 	var server, client net.Conn
@@ -195,10 +195,10 @@ func TestHybridSecureConnMultipleMessages(t *testing.T) {
 	}()
 
 	conn, err := net.Dial("tcp", listener.Addr().String())
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	peer := NewTCPPeer(conn, true)
 	client, err = HybridHandshake(peer)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	<-done
 
 	// Send multiple messages rapidly
@@ -219,7 +219,7 @@ func TestHybridSecureConnMultipleMessages(t *testing.T) {
 	for i, expected := range messages {
 		buf := make([]byte, 1024)
 		n, err := server.Read(buf)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, string(buf[:n]))
 		t.Logf("Message %d: %s", i+1, string(buf[:n]))
 	}
@@ -230,7 +230,7 @@ func TestHybridSecureConnMultipleMessages(t *testing.T) {
 
 func TestHybridSecureConnBidirectional(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer listener.Close()
 
 	var server, client net.Conn
@@ -244,10 +244,10 @@ func TestHybridSecureConnBidirectional(t *testing.T) {
 	}()
 
 	conn, err := net.Dial("tcp", listener.Addr().String())
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	peer := NewTCPPeer(conn, true)
 	client, err = HybridHandshake(peer)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	<-done
 	t.Log("Testing Bi-Directional data transfer")
 

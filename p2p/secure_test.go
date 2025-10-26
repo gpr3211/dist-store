@@ -5,14 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/gpr3211/dist-store/assert"
 )
 
 func TestSecureHandshake(t *testing.T) {
 	// Create a listener for testing
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer listener.Close()
 
 	// Channel to signal completion
@@ -23,11 +22,11 @@ func TestSecureHandshake(t *testing.T) {
 	// Server side goroutine
 	go func() {
 		conn, err := listener.Accept()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		serverPeer := NewTCPPeer(conn, false)
 		secureConn, err := SecureHandshake(serverPeer)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		serverConn = secureConn
 		done <- true
@@ -35,11 +34,11 @@ func TestSecureHandshake(t *testing.T) {
 
 	// Client side
 	conn, err := net.Dial("tcp", listener.Addr().String())
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	clientPeer := NewTCPPeer(conn, true)
 	secureConn, err := SecureHandshake(clientPeer)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	clientConn = secureConn
 
 	// Wait for server to complete handshake
@@ -54,23 +53,23 @@ func TestSecureHandshake(t *testing.T) {
 
 	// Write from client
 	n, err := clientConn.Write(testMessage)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, len(testMessage), n)
 
 	// Read on server
 	buf := make([]byte, 1024)
 	n, err = serverConn.Read(buf)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, testMessage, buf[:n])
 
 	// Test bidirectional communication
 	responseMessage := []byte("Response from server")
 	n, err = serverConn.Write(responseMessage)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	buf = make([]byte, 1024)
 	n, err = clientConn.Read(buf)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, responseMessage, buf[:n])
 
 	// Cleanup
@@ -81,7 +80,7 @@ func TestSecureHandshake(t *testing.T) {
 func TestSecureHandshakeFailure(t *testing.T) {
 	// Test with a closed connection
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer listener.Close()
 
 	go func() {
@@ -90,22 +89,24 @@ func TestSecureHandshakeFailure(t *testing.T) {
 	}()
 
 	conn, err := net.Dial("tcp", listener.Addr().String())
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	// Wait a bit for server to close
 	time.Sleep(100 * time.Millisecond)
 
 	peer := NewTCPPeer(conn, true)
 	_, err = SecureHandshake(peer)
+	if err == nil {
+		t.Error("Should have failed the handshake")
+	}
 
 	// Should fail because connection is closed.
-	assert.Error(t, err)
 }
 
 func TestSecureConnReadWrite(t *testing.T) {
 	// Create two peers with established connection
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer listener.Close()
 
 	var server, client *SecureConn
@@ -116,17 +117,17 @@ func TestSecureConnReadWrite(t *testing.T) {
 		conn, _ := listener.Accept()
 		peer := NewTCPPeer(conn, false)
 		secConn, err := SecureHandshake(peer)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		server = secConn.(*SecureConn)
 		done <- true
 	}()
 
 	// Client
 	conn, err := net.Dial("tcp", listener.Addr().String())
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	peer := NewTCPPeer(conn, true)
 	secConn, err := SecureHandshake(peer)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	client = secConn.(*SecureConn)
 
 	<-done
@@ -140,11 +141,11 @@ func TestSecureConnReadWrite(t *testing.T) {
 	for _, msg := range messages {
 		// Client -> Server
 		_, err := client.Write([]byte(msg))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		buf := make([]byte, 1024)
 		n, err := server.Read(buf)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, msg, string(buf[:n]))
 	}
 

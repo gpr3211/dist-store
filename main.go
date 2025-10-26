@@ -36,7 +36,7 @@ func makeServ(addr string, root string, nodes ...string) *server.FileServer {
 		Nodes:             nodes,
 	}
 	serverOpts.StorageRoot = root
-	serverOpts.AutoSync = true
+	serverOpts.AutoSync = true // broadcast file to all nodes on save. Will overwrite.
 
 	// SLogger.
 	optsLog := slog.HandlerOptions{
@@ -78,7 +78,7 @@ func main() {
 		panic(err)
 	}
 
-	cfg2.FServer.SaveData("user-test2", "data2", bytes.NewReader(bigData)) // save and broadcast data
+	cfg2.FServer.SaveData("user-test2", "data2", bytes.NewReader(bigData)) // save and broadcast data, since AutoSync is on.
 
 	/*
 		fmt.Printf("\n╔═══════════════════════════════════════╗\n")

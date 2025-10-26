@@ -7,6 +7,13 @@ import (
 	"testing"
 )
 
+func NoError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Error("got error %w", err.Error())
+	}
+}
+
 func Equal[T any](t *testing.T, got, want T) {
 	t.Helper()
 	if !isEqual(got, want) {
