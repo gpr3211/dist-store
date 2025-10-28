@@ -151,7 +151,7 @@ func TestStoreDelete(t *testing.T) {
 	s := NewStore(opts)
 	defer teardown(t, s)
 
-	key := "ss"
+	key := "some/ss"
 	id := "user-test-delete"
 	data := []byte{1, 2, 3}
 	if _, err := s.writeStream(id, key, bytes.NewReader(data)); err != nil {

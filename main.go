@@ -94,7 +94,7 @@ func main() {
 
 	time.Sleep(time.Second * 3) // give time to start and establish conn.
 
-	cfg.FServer.SaveData("user-test", "string.txt", bytes.NewReader([]byte("test string"))) // save and broadcast data
+	cfg.FServer.SaveData("user-test", "documents/string.txt", bytes.NewReader([]byte("test string"))) // save and broadcast data
 
 	time.Sleep(time.Second * 1)
 	bigData := make([]byte, 10*1024*1024)
@@ -102,7 +102,7 @@ func main() {
 		panic(err)
 	}
 
-	cfg2.FServer.SaveData("user-test2", "data2", bytes.NewReader(bigData)) // save and broadcast data, since AutoSync is on.
+	cfg2.FServer.SaveData("user-test2", "10mbData", bytes.NewReader(bigData)) // save and broadcast data, since AutoSync is on.
 
 	/*
 		fmt.Printf("\n╔═══════════════════════════════════════╗\n")

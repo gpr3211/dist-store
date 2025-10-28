@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path/filepath"
 )
 
 //TODO:
@@ -134,18 +135,19 @@ func HandleRootDir(s string) (*os.Root, error) {
 	}
 	return os.OpenRoot(s)
 }
+
 func (s *Store) OpenFileForWrite(id, key string) (*os.File, error) {
 	pathkey := s.PathTransformFunc(id, key)
-	// Create full directory structure: root/user_id/item_name
-	fullDir := s.Root + "/" + pathkey.ID
-	_, err := os.Stat(fullDir)
-	if errors.Is(err, os.ErrNotExist) {
-		if err := os.MkdirAll(fullDir, os.ModePerm); err != nil {
-			return nil, err
-		}
+	fullPath := pathkey.Fullpath()
+
+	// Ensure nested directories exist under root (e.g. root/id/Pictures/)
+	subdir := fmt.Sprintf("%s/%s", s.Root, filepath.Dir(fullPath))
+	if err := os.MkdirAll(subdir, os.ModePerm); err != nil {
+		return nil, err
 	}
-	pathandFilename := pathkey.Fullpath()
-	f, err := s.dir.OpenFile(pathandFilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+
+	// Open file inside the virtual root
+	f, err := s.dir.OpenFile(fullPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
 		return nil, err
 	}

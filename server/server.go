@@ -214,7 +214,6 @@ type Payload struct {
 
 // broadcast send key file to all connected peers.
 func (fs *FileServer) broadcast(msg model.Message) error {
-	fs.Logger.Info("broadcasting ... to %d ", string(len(fs.peers)), nil)
 	buf := new(bytes.Buffer)
 	if err := gob.NewEncoder(buf).Encode(msg); err != nil {
 		return err
